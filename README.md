@@ -21,3 +21,12 @@ If "XML" in options is truthy:
 - Need "tagName" field for selection.
 - If "attribute" field given, then selectree will check that field for any attributes at the current node (the "attributes" field should be an associative object).
 - If "children" is given, then selectree will check that attribute to get child nodes of the current node.
+
+# TODO
+
+1. Write this.
+2. Extend to stream-based input? If we can do this without parsing that'd be rad.
+
+# LICENSE
+
+[GPLv3](GPL.md)
