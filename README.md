@@ -22,22 +22,26 @@ If `XML` in options is truthy:
 
 # TODO
 
-1. Make some function that allows piping the output of a selection into a new object stream (essentially making `selectree` a Transform stream). Something like:
+- Make some function that allows piping the output of a selection into a new object stream (essentially making `selectree` a Transform stream). Something like:
+
 ``` javascript
-selectree(treeLikeObj).css('field1 > field2').pipe(otherStreamWhichLikesObjects);
+selectree(treeLikeObj)
+  .css('field1 > field2')
+  .pipe(otherStreamWhichLikesObjects);
 ```
 
-2. Allow modification of the tree and piping into another object (the first tree-like object, but with whatever modifications you may have made). Something like:
+- Allow modification of the tree and piping into another object (the first tree-like object, but with whatever modifications you may have made). Something like:
+
 ``` javascript
-var field2To3 = selectree(treeLikeObj).css('field1 > field2', function(node) {
+var field2To3 = selectree(treeLikeObj)
+  .css('field1 > field2', function(node) {
   node.tagName = "field3";
   return node;
 }).toTree();
 ```
 
-3. Make sure to do all readableStream event creation by pushing onto the event queue instead of doing synchronously, otherwise you get a synchronous stream, which is just silly.
-
-4. Along the same lines, consider some sort of modification that allows stream-based input instead of requiring a physical object.
+- Make sure to do all readableStream event creation by pushing onto the event queue instead of doing synchronously, otherwise you get a synchronous stream, which is just silly.
+- Along the same lines, consider some sort of modification that allows stream-based input instead of requiring a physical object.
 
 # LICENSE
 
