@@ -30,14 +30,21 @@ selectree(treeLikeObj)
   .pipe(otherStreamWhichLikesObjects);
 ```
 
+- We should make the above and below work so that:
+  - the selector functions `.css()`/`.xpath()` return a *newly-created* `Readable` stream
+  - select funs accept an optional second argument; a function which receives the node the selector selects on, and returns a modified version of that node. in the output stream, the selected nodes will be replaced with the output
+  - the output `Transform` stream will have a `toTree()` function accepting a callback which runs on completion of the stream
+
 - Allow modification of the tree and piping into another object (the first tree-like object, but with whatever modifications you may have made). Something like:
 
 ``` javascript
-var field2To3 = selectree(treeLikeObj)
+selectree(treeLikeObj)
   .css('field1 > field2', function(node) {
   node.tagName = "field3";
   return node;
-}).toTree();
+  }).toTree(function(tree) {
+  console.log(tree);
+  });
 ```
 
 - Make sure to do all readableStream event creation by pushing onto the event queue instead of doing synchronously, otherwise you get a synchronous stream, which is just silly.
