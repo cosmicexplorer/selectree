@@ -4,7 +4,7 @@ selectree
 A wrapper that takes your tree-like data structure and makes CSS/XPath selectors available for traversal.
 
 Usage:
-```javascript
+``` javascript
 var selectree = require('selectree');
 // optional options object as second argument
 selectree(treeLikeObject).css('field1 > field2[attribute=value]')
@@ -15,14 +15,14 @@ selectree(treeLikeObject).css('field1 > field2[attribute=value]')
 
 If no options argument given, assume object is a normal javascript object (JSON-like) and select on that (no "attributes" allowed, just children and node names). Returns node stream (available through browserify!) from `.css()` and `.xpath()` calls.
 
-If `XML` in options is truthy:
+Unless `json` in options is truthy:
 - Need `tagName` field for selection.
 - If `attribute` field given, then selectree will check that field for any attributes at the current node (the `attributes` field should be an associative object).
 - If `children` is given, then selectree will check that attribute to get child nodes of the current node.
 
 # TODO
 
-- Make some function that allows piping the output of a selection into a new object stream (essentially making `selectree` a Transform stream). Something like:
+- Make some function that allows piping the output of a selection into a new object stream (by making `.css()`/`.xpath()` a Readable stream). Something like:
 
 ``` javascript
 selectree(treeLikeObj)
@@ -40,10 +40,10 @@ selectree(treeLikeObj)
 ``` javascript
 selectree(treeLikeObj)
   .css('field1 > field2', function(node) {
-  node.tagName = "field3";
-  return node;
+    node.tagName = "field3";
+    return node;
   }).toTree(function(tree) {
-  console.log(tree);
+    console.log(tree);
   });
 ```
 

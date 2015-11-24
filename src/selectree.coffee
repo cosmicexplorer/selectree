@@ -35,7 +35,10 @@ class SelecTree
     newOpts.name = ind.toString()
     new SelecTree o, newOpts
   @GetObjectChildren: (obj, opts) =>
+    # attrs = opts.attributes? obj
     for k, v of obj
+      # FIXME: find better attributes solution for json objects
+      # if attrs? and v is attrs then continue
       newOpts = @CloneOpts opts
       newOpts.name = k
       new SelecTree v, newOpts
@@ -60,20 +63,18 @@ class SelecTree
   attributes: -> @opts.attributes? @obj
 
   # return readable streams
-  css: (sel) -> new SelectStream @, sel, {css: yes}
-  xpath: (sel) -> new SelectStream @, sel, {xpath: yes}
+  css: (sel) -> new SelectStream @, sel, ParseCSS
+  xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
 # returns stateful traversal object with getNext() function
 ParseCSS = (obj, sel) ->
 ParseXPath = (obj, sel) ->
 
 class SelectStream extends stream.Readable
-  constructor: (treeObj, selector, opts = {}) ->
+  constructor: (treeObj, selector, traverseFun, opts = {}) ->
     opts.objectMode = yes
     stream.Readable.call @, opts
-    @traverser = if opts.css then ParseCSS treeObj, sel
-    else if opts.xpath then ParseXPath treeObj, sel
-    else throw new Error "no selector type given!"
+    @traverser = traverseFun treeObj, selector
 
   traverse: ->
     next = @traverser.getNext() # returns null if at end of tree
