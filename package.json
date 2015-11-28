@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "coffee-script": "^1.10.0",
-    "qunit": "^0.7.7"
+    "nodeunit": "^0.9.1"
   },
   "dependencies": {}
 }
