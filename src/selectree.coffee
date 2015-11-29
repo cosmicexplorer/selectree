@@ -3,12 +3,13 @@ stream = require 'stream'
 class SelecTree
   @RequiredParams: ['name', 'children', 'attributes', 'content']
   @ValidateArgs: (opts) ->
+    # this branch should never be taken in user code
     if not opts? then throw new Error "no traversal options given!"
     else if (not opts.json? and
-             not @constructor.RequiredParams.every (p) => @opts[p]?)
-      throw new Error "not all traversal options
-      [#{@constructor.RequiredParams.join ','}] given!"
-    else if opts.json? and not @opts.name?
+             not @RequiredParams.every (p) => opts[p]?)
+      throw new Error "not all traversal options [#{@RequiredParams.join ','}]
+        given!"
+    else if opts.json? and not opts.name?
       throw new Error "no 'name' parameter given for json object!"
   @CloneOpts: (opts) ->
     newOpts = {}
@@ -30,15 +31,15 @@ class SelecTree
   # element may have "content," similar to a text node in HTML. for self-closing
   # (empty) tags, or nodes which have an open and close tag but nothing in
   # between, this will be zero. "content" may contain absolutely anything
+  # 'attributes' is provided as a string for json-like objects, just like name
   @GetArrayChildren: (obj, opts) => obj.map (o, ind) =>
     newOpts = @CloneOpts opts
     newOpts.name = ind.toString()
     new SelecTree o, newOpts
   @GetObjectChildren: (obj, opts) =>
-    # attrs = opts.attributes? obj
+    attrs = opts.attributes
     for k, v of obj
-      # FIXME: find better attributes solution for json objects
-      # if attrs? and v is attrs then continue
+      if k is attrs then continue
       newOpts = @CloneOpts opts
       newOpts.name = k
       new SelecTree v, newOpts
@@ -84,3 +85,7 @@ class SelectStream extends stream.Readable
 
 class ToTreeStream extends stream.Writable
   constructor: (opts = {}) ->
+
+module.exports = {
+  SelecTree
+}

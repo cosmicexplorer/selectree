@@ -27,7 +27,7 @@ test: all $(TEST_OUT) $(NODE_UNIT)
 	$(NODE_UNIT) $(TEST_OUT)
 
 %.js: %.coffee $(COFFEE_CC)
-	$(COFFEE_CC) -c $<
+	$(COFFEE_CC) -bc --no-header $<
 
 $(DEPS):
 	npm install
