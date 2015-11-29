@@ -15,13 +15,14 @@ class SelecTree
   @CloneOpts: (opts) ->
     newOpts = {}
     newOpts[param] = opts[param] for param in @Params
+    newOpts.json = opts.json if opts.json?
     newOpts
 
-  @EachCaseOfOpts: (obj, opts, arrFun, objFun, jsonFun, xmlFun) ->
+  @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
     if opts.json and not opts.children?
       if obj instanceof Array then arrFun obj, opts
       else if obj instanceof Object then objFun obj, opts
-      else jsonFun obj, opts
+      else valueFun obj, opts
     else xmlFun obj, opts
 
   @StringOrFunOptions: (obj, strOrFun) -> switch strOrFun?.constructor?.name
@@ -46,7 +47,7 @@ class SelecTree
     newOpts = @CloneOpts opts
     newOpts.name = ind.toString()
     new SelecTree o, newOpts
-  @GetObjectChildren: (obj, opts) ->
+  @GetObjectChildren: (obj, opts) =>
     attrs = opts.attributes
     for k, v of obj
       if k is attrs then continue
