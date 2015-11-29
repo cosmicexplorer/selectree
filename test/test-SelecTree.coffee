@@ -1,7 +1,6 @@
 {SelecTree} = require '../src/selectree'
 
 module.exports =
-  # construct SelecTree with empty object to test options validation
   'construction': (test) ->
     test.expect 5
     test.throws (-> new SelecTree {}), "no options"

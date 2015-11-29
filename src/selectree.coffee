@@ -35,22 +35,14 @@ class SelecTree
       when 'String' then obj[strOrFun]
       when 'Function' then strOrFun obj
       else throw new Error "option not string nor function!"
-    # if either return functions, call them unless noCall is set
     if not noCall and res?.constructor.name is 'Function' then res() else res
 
   constructor: (@obj, @opts) ->
     @constructor.ValidateArgs @opts
 
-  # does StringOrFun for xml objects. for json, name given in ctor MUST be the
-  # name you wish to receive out of this function. TODO: add docs to readme
   name: -> if @opts.json then @opts.name
   else @constructor.StringOrFunOptions @obj, @opts, 'name'
 
-  # if element has no children (.children() returns an empty array), then the
-  # element may have "content," similar to a text node in HTML. for self-closing
-  # (empty) tags, or nodes which have an open and close tag but nothing in
-  # between, this will be zero. "content" may contain absolutely anything
-  # 'attributes' is provided as a string for json-like objects, just like name
   @GetArrayChildren: (obj, opts) => obj.map (o, ind) =>
     newOpts = @CloneOpts opts
     newOpts.name = ind.toString()
@@ -88,7 +80,6 @@ class SelecTree
     res = @constructor.StringOrFunOptions @obj, @opts, 'attributes'
     if res? then res else {}
 
-  # return readable streams
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
