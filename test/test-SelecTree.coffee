@@ -68,3 +68,48 @@ module.exports =
     test.equal objectRes[1].name(), 'hello', "object child has invalid name"
     test.equal objectRes[1].obj, 'hey', "object child has invalid value"
     test.done()
+
+  'SelecTree-GetChildrenXml': (test) ->
+    test.expect 18
+    traversalObj =
+      tag: 'root'
+      children: [
+        {tag: 'leaf', content: 1}
+        {tag: 'nonleaf', children: -> [
+          {tag: 'leaf', content: 'test'}
+          {tag: 'leaf', content: 'hey'}]}]
+
+    stringOpts =
+      name: 'tag'
+      children: 'children'
+      attributes: 'attrs'
+      content: 'content'
+    stringObj = new SelecTree traversalObj, stringOpts
+    firstChildren = stringObj.children()
+    test.equal firstChildren.length, 2, "invalid number of children"
+    test.equal firstChildren[0].name(), 'leaf', "invalid child name"
+    test.equal firstChildren[0].content(), 1, "invalid child content"
+    test.equal firstChildren[1].name(), 'nonleaf', "invalid child name"
+    secondChildren = firstChildren[1].children()
+    test.equal secondChildren.length, 2, "invalid number of children"
+    test.equal secondChildren[0].name(), 'leaf', "invalid child name"
+    test.equal secondChildren[0].content(), 'test', "invalid child content"
+    test.equal secondChildren[1].name(), 'leaf', "invalid child name"
+    test.equal secondChildren[1].content(), 'hey', "invalid child content"
+
+    # same with function options
+    funOpts = SelecTree.CloneOpts stringOpts
+    funOpts.children = (obj) -> obj.children
+    funObj = new SelecTree traversalObj, funOpts
+    firstChildrenFun = funObj.children()
+    test.equal firstChildrenFun.length, 2, "invalid number of children"
+    test.equal firstChildrenFun[0].name(), 'leaf', "invalid child name"
+    test.equal firstChildrenFun[0].content(), 1, "invalid child content"
+    test.equal firstChildrenFun[1].name(), 'nonleaf', "invalid child name"
+    secondChildrenFun = firstChildrenFun[1].children()
+    test.equal secondChildrenFun.length, 2, "invalid number of children"
+    test.equal secondChildrenFun[0].name(), 'leaf', "invalid child name"
+    test.equal secondChildrenFun[0].content(), 'test', "invalid child content"
+    test.equal secondChildrenFun[1].name(), 'leaf', "invalid child name"
+    test.equal secondChildrenFun[1].content(), 'hey', "invalid child content"
+    test.done()

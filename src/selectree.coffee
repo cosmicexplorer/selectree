@@ -1,6 +1,7 @@
 stream = require 'stream'
 
 class SelecTree
+  @OptionalParams: ['json', 'dontFlattenFunctions']
   @Params: ['name', 'children', 'attributes', 'content']
 
   @ValidateArgs: (opts) ->
@@ -15,7 +16,9 @@ class SelecTree
   @CloneOpts: (opts) ->
     newOpts = {}
     newOpts[param] = opts[param] for param in @Params
-    newOpts.json = opts.json if opts.json?
+    # one-line version of this is compiling to some weird lambda
+    for param in @OptionalParams
+      newOpts[param] = opts[param] if opts[param]?
     newOpts
 
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
@@ -25,10 +28,13 @@ class SelecTree
       else valueFun obj, opts
     else xmlFun obj, opts
 
-  @StringOrFunOptions: (obj, strOrFun) -> switch strOrFun?.constructor?.name
-    when 'String' then obj[strOrFun]
-    when 'Function' then strOrFun obj
-    else throw new Error "option not string nor function!"
+  @StringOrFunOptions: (obj, strOrFun, noCall) ->
+    res = switch strOrFun?.constructor.name
+      when 'String' then obj[strOrFun]
+      when 'Function' then strOrFun obj
+      else throw new Error "option not string nor function!"
+    # if either return functions, call them unless noCall is set
+    if not noCall and res?.constructor.name is 'Function' then do res else res
 
   constructor: (@obj, @opts) ->
     @constructor.ValidateArgs @opts
@@ -36,7 +42,8 @@ class SelecTree
   # does StringOrFun for xml objects. for json, name given in ctor MUST be the
   # name you wish to receive out of this function. TODO: add docs to readme
   name: -> if @opts.json then @opts.name
-  else @constructor.StringOrFunOptions @obj, @opts.name
+  else @constructor.StringOrFunOptions @obj, @opts.name,
+    @opts.dontFlattenFunctions
 
   # if element has no children (.children() returns an empty array), then the
   # element may have "content," similar to a text node in HTML. for self-closing
@@ -55,8 +62,10 @@ class SelecTree
       newOpts.name = k
       new SelecTree v, newOpts
   @GetEmptyChild: -> []
-  @GetXmlChildren: (obj, opts) ->
-    opts.children(obj).map (o) -> new SelecTree o, opts
+  @GetXmlChildren: (obj, opts) =>
+    childrenArr = @StringOrFunOptions(obj, opts.children,
+      opts.dontFlattenFunctions)
+    childrenArr.map (o) -> new SelecTree o, opts
   children: ->
     @constructor.EachCaseOfOpts @obj, @opts,
       @constructor.GetArrayChildren,
@@ -70,7 +79,8 @@ class SelecTree
       @constructor.GetEmptyContent,
       @constructor.GetEmptyContent,
       (=> @obj),
-      @opts.content
+      ((obj, opts) => @constructor.StringOrFunOptions obj, opts.content,
+        opts.dontFlattenFunctions)
 
   attributes: -> @opts.attributes? @obj
 
