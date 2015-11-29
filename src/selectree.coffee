@@ -1,4 +1,7 @@
 stream = require 'stream'
+ParseCSS = require './engines/css'
+ParseXPath = require './engines/xpath'
+{SelectStream} = require './streams'
 
 class SelecTree
   @OptionalParams: ['json', 'dontFlattenFunctions']
@@ -83,25 +86,12 @@ class SelecTree
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
-# returns stateful traversal object with getNext() function
-ParseCSS = (obj, sel) ->
-ParseXPath = (obj, sel) ->
+# massage input a bit
+selectree = (obj, opts = {}) ->
+  opts.name = 'root' unless opts.name?
+  return new SelecTree obj, opts
 
-class SelectStream extends stream.Readable
-  constructor: (treeObj, selector, traverseFun, opts = {}) ->
-    opts.objectMode = yes
-    stream.Readable.call @, opts
-    @traverser = traverseFun treeObj, selector
+# attach class as property on function
+selectree.SelecTree = SelecTree
 
-  traverse: ->
-    next = @traverser.getNext() # returns null if at end of tree
-    if next? and @push next then process.nextTick => @traverse()
-
-  _read: -> process.nextTick => @traverse()
-
-class ToTreeStream extends stream.Writable
-  constructor: (opts = {}) ->
-
-module.exports = {
-  SelecTree
-}
+module.exports = selectree

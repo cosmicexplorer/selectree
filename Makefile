@@ -7,8 +7,8 @@ NODE_UNIT := $(NPM_BIN)/nodeunit
 
 DEPS := $(COFFEE_CC) $(NODE_UNIT)
 
-SRC_DIR := src
-SRC_IN := $(wildcard $(SRC_DIR)/*.coffee)
+SRC_DIRS := src src/engines
+SRC_IN := $(wildcard $(addsuffix /*.coffee, $(SRC_DIRS)))
 SRC_OUT := $(SRC_IN:%.coffee=%.js)
 
 TEST_DIR := test
