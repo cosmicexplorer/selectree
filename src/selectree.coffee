@@ -34,7 +34,7 @@ class SelecTree
       when 'Function' then strOrFun obj
       else throw new Error "option not string nor function!"
     # if either return functions, call them unless noCall is set
-    if not noCall and res?.constructor.name is 'Function' then do res else res
+    if not noCall and res?.constructor.name is 'Function' then res() else res
 
   constructor: (@obj, @opts) ->
     @constructor.ValidateArgs @opts

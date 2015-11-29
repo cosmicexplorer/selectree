@@ -2,7 +2,7 @@
 
 module.exports =
   # construct SelecTree with empty object to test options validation
-  'SelecTree-construction': (test) ->
+  'construction': (test) ->
     test.expect 5
     test.throws (-> new SelecTree {}), "no options"
     test.throws (-> new SelecTree {}, {}), "not enough options"
@@ -16,7 +16,7 @@ module.exports =
       "name given"
     test.done()
 
-  'SelecTree-GetName': (test) ->
+  'name': (test) ->
     test.expect 4
     # json only allows direct string name
     jsonName = new SelecTree {}, {json: yes, name: "test"}
@@ -42,7 +42,7 @@ module.exports =
       "non-string/function name not throwing"
     test.done()
 
-  'SelecTree-GetChildrenJson': (test) ->
+  'children (json)': (test) ->
     test.expect 9
     opts =
       json: yes
@@ -69,7 +69,7 @@ module.exports =
     test.equal objectRes[1].obj, 'hey', "object child has invalid value"
     test.done()
 
-  'SelecTree-GetChildrenXml': (test) ->
+  'children (xml)': (test) ->
     test.expect 18
     traversalObj =
       tag: 'root'
@@ -112,4 +112,8 @@ module.exports =
     test.equal secondChildrenFun[0].content(), 'test', "invalid child content"
     test.equal secondChildrenFun[1].name(), 'leaf', "invalid child name"
     test.equal secondChildrenFun[1].content(), 'hey', "invalid child content"
+    test.done()
+
+  'dontFlattenFunctions support': (test) ->
+    test.expect 0
     test.done()
