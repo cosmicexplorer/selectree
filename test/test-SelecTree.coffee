@@ -70,7 +70,7 @@ module.exports =
     test.done()
 
   'children (xml)': (test) ->
-    test.expect 18
+    test.expect 9
     traversalObj =
       tag: 'root'
       children: [
@@ -96,10 +96,25 @@ module.exports =
     test.equal secondChildren[0].content(), 'test', "invalid child content"
     test.equal secondChildren[1].name(), 'leaf', "invalid child name"
     test.equal secondChildren[1].content(), 'hey', "invalid child content"
+    test.done()
 
+  'function options': (test) ->
+    # same as children (xml), but with a function as an option field
+    test.expect 9
+    traversalObj =
+      tag: 'root'
+      children: [
+        {tag: 'leaf', content: 1}
+        {tag: 'nonleaf', children: -> [
+          {tag: 'leaf', content: 'test'}
+          {tag: 'leaf', content: 'hey'}]}]
+
+    funOpts =
+      name: 'tag'
+      children: (obj) -> obj.children
+      attributes: 'attrs'
+      content: 'content'
     # same with function options
-    funOpts = SelecTree.CloneOpts stringOpts
-    funOpts.children = (obj) -> obj.children
     funObj = new SelecTree traversalObj, funOpts
     firstChildrenFun = funObj.children()
     test.equal firstChildrenFun.length, 2, "invalid number of children"
@@ -114,6 +129,50 @@ module.exports =
     test.equal secondChildrenFun[1].content(), 'hey', "invalid child content"
     test.done()
 
-  'dontFlattenFunctions support': (test) ->
-    test.expect 0
+  'dontFlattenFunctions': (test) ->
+    test.expect 2
+    f = -> 'test'
+    obj = content: f
+
+    flattenOpts =
+      name: 'test'
+      children: 'test'
+      attributes: 'test'
+      content: 'content'
+    flattenObj = new SelecTree obj, flattenOpts
+    test.equal flattenObj.content(), 'test', "invalid flattened result"
+
+    nonFlatOpts = SelecTree.CloneOpts flattenOpts
+    nonFlatOpts.dontFlattenFunctions = yes
+    nonFlatObj = new SelecTree obj, nonFlatOpts
+    test.equal nonFlatObj.content(), f, "invalid non-flattened result"
+    test.done()
+
+  'attributes (json)': (test) ->
+    test.expect 1
+    obj =
+      a: 1
+      b: 2
+    tree = new SelecTree obj, {name: 'base', json: yes}
+    test.deepEqual tree.attributes(), obj, "invalid attributes"
+    test.done()
+
+  'attributes (xml)': (test) ->
+    test.expect 2
+    opts =
+      name: 'test',
+      children: 'test',
+      attributes: 'attrs',
+      content: test
+
+    emptyAttributes = {}
+    emptyAttrsTree = new SelecTree emptyAttributes, opts
+    test.deepEqual emptyAttrsTree.attributes(), {}, "invalid empty attributes"
+
+    testKVPairs = {a: 1, b: 2}
+    normalAttrs = attrs: testKVPairs
+    normalAttrsTree = new SelecTree normalAttrs, opts
+    test.deepEqual normalAttrsTree.attributes(), testKVPairs,
+      "invalid normal attributes"
+
     test.done()
