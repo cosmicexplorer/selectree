@@ -1,4 +1,5 @@
 stream = require 'stream'
+util = require './util'
 ParseCSS = require './engines/css'
 ParseXPath = require './engines/xpath'
 {SelectStream} = require './streams'
@@ -26,19 +27,19 @@ class SelecTree
 
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
     if opts.json and not opts.children?
-      if obj instanceof Array then arrFun obj, opts
-      else if obj instanceof Object then objFun? obj, opts
+      if util.isArray obj then arrFun obj, opts
+      else if util.isObject obj then objFun? obj, opts
       else valueFun? obj, opts
     else xmlFun? obj, opts
 
   @StringOrFunOptions: (obj, opts, field) ->
     strOrFun = opts[field]
     noCall = opts.dontFlattenFunctions
-    res = switch strOrFun?.constructor.name
-      when 'String' then obj[strOrFun]
-      when 'Function' then strOrFun obj
+    res = switch
+      when util.isString strOrFun then obj[strOrFun]
+      when util.isFunction strOrFun then strOrFun obj
       else throw new Error "option not string nor function!"
-    if not noCall and res?.constructor.name is 'Function' then res() else res
+    if not noCall and util.isFunction res then res() else res
 
   constructor: (@obj, @opts) ->
     @constructor.ValidateArgs @opts
