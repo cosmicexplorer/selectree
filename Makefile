@@ -13,8 +13,9 @@ SRC_IN := $(wildcard $(SRC_DIR)/*.coffee)
 SRC_OUT := $(SRC_IN:%.coffee=%.js)
 
 GRAMMAR_DIR := src/grammars
-GRAMMARS := $(wildcard $(GRAMMAR_DIR)/*.jison)
-PARSERS := $(GRAMMARS:%.jison=%.tab.js)
+GRAMMARS := $(wildcard $(GRAMMAR_DIR)/*.y)
+LEXERS := $(wildcard $(GRAMMAR_DIR)/*.l)
+PARSERS := $(GRAMMARS:%.y=%.tab.js)
 
 TEST_DIR := test
 TEST_IN := $(wildcard $(TEST_DIR)/*.coffee)
@@ -34,8 +35,8 @@ test: all $(TEST_OUT) $(NODE_UNIT)
 %.js: %.coffee $(COFFEE_CC)
 	$(COFFEE_CC) -bc --no-header $<
 
-%.tab.js: %.jison $(JISON)
-	$(JISON) $< -o $@
+%.tab.js: %.y %.l $(JISON)
+	$(JISON) $< $(word 2, $^) -o $@
 
 $(DEPS):
 	npm install
