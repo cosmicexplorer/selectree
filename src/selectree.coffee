@@ -27,9 +27,9 @@ class SelecTree
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
     if opts.json and not opts.children?
       if obj instanceof Array then arrFun obj, opts
-      else if obj instanceof Object then objFun obj, opts
-      else valueFun obj, opts
-    else xmlFun obj, opts
+      else if obj instanceof Object then objFun? obj, opts
+      else valueFun? obj, opts
+    else xmlFun? obj, opts
 
   @StringOrFunOptions: (obj, opts, field) ->
     strOrFun = opts[field]
@@ -51,24 +51,22 @@ class SelecTree
     newOpts.name = ind.toString()
     new SelecTree o, newOpts
   @GetObjectChildren: (obj, opts) =>
-    attrs = opts.attributes
     for k, v of obj
-      if k is attrs then continue
       newOpts = @CloneOpts opts
       newOpts.name = k
       new SelecTree v, newOpts
   @GetEmptyChild: -> []
-  @GetXmlChildren: (obj, opts) =>
-    childrenArr = @StringOrFunOptions obj, opts, 'children'
-    if childrenArr instanceof Array
-      childrenArr.map (o) -> new SelecTree o, opts
-    else throw new Error "children not an array!"
   children: ->
-    @constructor.EachCaseOfOpts @obj, @opts,
-      @constructor.GetArrayChildren,
-      @constructor.GetObjectChildren,
-      @constructor.GetEmptyChild,
-      @constructor.GetXmlChildren
+    if @opts.children?
+      childrenArr = @constructor.StringOrFunOptions @obj, @opts, 'children'
+      if childrenArr instanceof Array
+        childrenArr.map (o) => new SelecTree o, @opts
+      else throw new Error "children not an array!"
+    else
+      @constructor.EachCaseOfOpts @obj, @opts,
+        @constructor.GetArrayChildren,
+        @constructor.GetObjectChildren,
+        @constructor.GetEmptyChild
 
   @GetEmptyContent: -> null
   content: ->
@@ -78,17 +76,18 @@ class SelecTree
       (=> @obj),
       ((obj, opts) => @constructor.StringOrFunOptions obj, opts, 'content')
 
-  attributes: -> if @opts.json then @obj
-  else
-    res = @constructor.StringOrFunOptions @obj, @opts, 'attributes'
-    if res? then res else {}
+  attributes: ->
+    if @opts.json and not @opts.attributes? then @obj
+    else
+      res = @constructor.StringOrFunOptions @obj, @opts, 'attributes'
+      if res? then res else {}
 
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
 # massage input a bit
 selectree = (obj, opts = {}) ->
-  opts.name = 'root' unless opts.name?
+  opts.name = 'root' if opts.json and not opts.name?
   return new SelecTree obj, opts
 
 # attach class as property on function
