@@ -6,9 +6,6 @@
     "type": "git",
     "url": "git://github.com/cosmicexplorer/selectree.git"
   },
-  "scripts": {
-    "test": "node test/test.js"
-  },
   "devDependencies": {
     "coffee-script": "^1.10.0",
     "jison": "^0.4.15",
