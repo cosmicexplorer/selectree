@@ -3,6 +3,6 @@
 
 {parse} = require './grammars/css.tab'
 
-listener = (line) -> console.log parse line.toString()
+listener = (line) -> console.log parse line.toString().trim()
 process.stdin.on 'data', listener
 process.stdin.on 'end', -> process.stdin.removeListener 'data', listener

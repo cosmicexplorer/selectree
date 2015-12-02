@@ -35,8 +35,9 @@ test: all $(TEST_OUT) $(NODE_UNIT)
 %.js: %.coffee $(COFFEE_CC)
 	$(COFFEE_CC) -bc --no-header $<
 
+JISON_WRAPPER := jison-wrapper.sh
 %.tab.js: %.y %.l $(JISON)
-	$(JISON) $< $(word 2, $^) -o $@
+	$(JISON_WRAPPER) $@ $^
 
 $(DEPS):
 	npm install
