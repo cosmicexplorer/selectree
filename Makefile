@@ -4,18 +4,23 @@ NODE_DIR := node_modules
 NPM_BIN := $(NODE_DIR)/.bin
 COFFEE_CC := $(NPM_BIN)/coffee
 NODE_UNIT := $(NPM_BIN)/nodeunit
+JISON := $(NPM_BIN)/jison
 
-DEPS := $(COFFEE_CC) $(NODE_UNIT)
+DEPS := $(COFFEE_CC) $(NODE_UNIT) $(JISON)
 
-SRC_DIRS := src src/engines
-SRC_IN := $(wildcard $(addsuffix /*.coffee, $(SRC_DIRS)))
+SRC_DIR := src
+SRC_IN := $(wildcard $(SRC_DIR)/*.coffee)
 SRC_OUT := $(SRC_IN:%.coffee=%.js)
+
+GRAMMAR_DIR := src/grammars
+GRAMMARS := $(wildcard $(GRAMMAR_DIR)/*.jison)
+PARSERS := $(GRAMMARS:%.jison=%.tab.js)
 
 TEST_DIR := test
 TEST_IN := $(wildcard $(TEST_DIR)/*.coffee)
 TEST_OUT := $(TEST_IN:%.coffee=%.js)
 
-all: $(SRC_OUT)
+all: $(SRC_OUT) $(PARSERS)
 
 clean:
 	rm -f $(SRC_OUT) $(TEST_OUT)
@@ -28,6 +33,9 @@ test: all $(TEST_OUT) $(NODE_UNIT)
 
 %.js: %.coffee $(COFFEE_CC)
 	$(COFFEE_CC) -bc --no-header $<
+
+%.tab.js: %.jison $(JISON)
+	$(JISON) $< -o $@
 
 $(DEPS):
 	npm install

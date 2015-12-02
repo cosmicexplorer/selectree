@@ -1,7 +1,7 @@
 stream = require 'stream'
 util = require './util'
-ParseCSS = require './engines/css'
-ParseXPath = require './engines/xpath'
+ParseCSS = require './css'
+ParseXPath = require './xpath'
 {SelectStream} = require './streams'
 
 class SelecTree
