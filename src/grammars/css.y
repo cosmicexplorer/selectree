@@ -1,22 +1,36 @@
 /* pulled from http://www.w3.org/TR/css3-selectors/#grammar */
 %ebnf
+%start selectors_group
 
 %%
 
 selectors_group
-  : selector (COMMA S* selector)*
+  : selector comma_space_selector*
+      {console.log($2); return $1;}
+  | error
+      {return 'ERR' + $1;}
+  ;
+
+comma_space_selector
+  : COMMA S* selector -> $3
+  ;
+
+comb_select_seq
+  : combinator simple_selector_sequence -> $1 + $2
   ;
 
 selector
-  : simple_selector_sequence (combinator simple_selector_sequence)*
+  : simple_selector_sequence comb_select_seq*
+      {console.log($2); $$ = $1;}
   ;
 
 combinator
   /* combinators can be surrounded by whitespace */
-  : PLUS S*
-  | GREATER S*
-  | TILDE S*
-  | S+
+  /* "neighbor" means have same parent */
+  : PLUS S* -> $1 /* immediate neighbor */
+  | TILDE S* -> $1 /* neighbor */
+  | GREATER S* -> $1 /* direct descendant */
+  | S+ /* descendant */
   ;
 
 simple_selector_startseq
@@ -34,6 +48,7 @@ simple_selector_endseq
 
 simple_selector_sequence
   : simple_selector_startseq simple_selector_endseq*
+      {console.log($1); $$ = $1;}
   | simple_selector_endseq+
   ;
 

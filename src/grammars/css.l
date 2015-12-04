@@ -28,7 +28,6 @@ V         v|\\0{0,4}(58|78)(\r\n|[ \t\r\n\f])?|\\v
 %%
 
 [ \t\r\n\f]+     return 'S'
-
 "~="             return 'INCLUDES'
 "|="             return 'DASHMATCH'
 "^="             return 'PREFIXMATCH'
