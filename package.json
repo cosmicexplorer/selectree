@@ -12,5 +12,7 @@
     "nodeunit": "^0.9.1",
     "regenerator": "^0.8.42"
   },
-  "dependencies": {}
+  "dependencies": {
+    "lodash": "^3.10.1"
+  }
 }

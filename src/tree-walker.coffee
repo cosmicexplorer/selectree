@@ -7,7 +7,7 @@ or another matcher. 'yes' means the match completes, 'no' means it doesn't
 match, and another matcher (which could be itself) means the match is in an
 intermediate state.
 
-matchers are given (parent, child, childIndex); most matchers will just call
+matchers are given (children, childIndex); most matchers will just call
 parent.children()[childIndex] to get the current node, but some matchers
 (like some css combinators) may need more information. the list of matchers is
 then recursively called on all children of all children, etc, in a depth-first
@@ -34,18 +34,30 @@ match.
 
 # node is a SelecTree node, matchers are functions as described above
 match = (node, origMatchers, secondaryMatchers = []) ->
-  for child, index of node.children()
+  children = node.children()
+  allMatchers = origMatchers.concat secondaryMatchers
+  immediateMatchers = []        # matchers used for immediate siblings (css: +)
+  for child, index in children
     # refersToRoot MUST be supported by client for performance
+    # filter out absolute paths
     newOrigMatchers =
       if node.isRoot then origMatchers.filter (m) -> not m.refersToRoot
       else origMatchers
     newSecondaryMatchers = []
-    for matcher in origMatchers.concat secondaryMatchers
-      matchResult = matcher node, child, index
+    newImmediateMatchers = []   # swap with immediateMatchers
+    for matcher in allMatchers.concat immediateMatchers
+      matchResult = matcher children, index
       switch matchResult
         when yes then yield child
         when no
-        else newSecondaryMatchers.push matchResult
+        else
+          arrayToPush =
+            # add to allMatchers, but just for this node
+            if matchResult.isForSameSiblings then allMatchers
+            else if matchResult.isForImmediateSibling then newImmediateMatchers
+            else newSecondaryMatchers
+          arrayToPush.push matchResult
+    immediateMatchers = newImmediateMatchers # swap
     # depth-first search
     results = match child, newOrigMatchers, newSecondaryMatchers
     yield res until (res = results.next()).done
