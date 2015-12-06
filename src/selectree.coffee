@@ -4,14 +4,20 @@ ParseCSS = require './css'
 ParseXPath = require './xpath'
 {SelectStream} = require './streams'
 
+# TODO: consider being able to take a list of nodes, each with only a 'parent'
+# attribute/function (as an object key or in options object), and transform it
+# into a SelecTree as well
+
 class SelecTree
+  # TODO: test this
+  # additional parameter 'isRoot' in opts is simply forwarded to @isRoot
   @OptionalParams: ['json', 'dontFlattenFunctions']
   @Params: ['name', 'children', 'attributes', 'content']
 
   @ValidateArgs: (opts) ->
     if not opts? then throw new Error "no traversal options given!"
     else if (not opts.json? and
-             not @Params.every (p) => opts[p]?)
+             not @Params.every (p) -> opts[p]?)
       errstr = "not all traversal options [#{@Params.join ','}] given!"
       throw new Error errstr
     else if opts.json? and not opts.name?
@@ -43,6 +49,7 @@ class SelecTree
 
   constructor: (@obj, @opts) ->
     @constructor.ValidateArgs @opts
+    @isRoot = if @opts.isRoot then yes else no
 
   name: -> if @opts.json then @opts.name
   else @constructor.StringOrFunOptions @obj, @opts, 'name'
@@ -88,7 +95,11 @@ class SelecTree
 
 # massage input a bit
 selectree = (obj, opts = {}) ->
-  opts.name = 'root' if opts.json and not opts.name?
+  opts.isRoot ?= yes
+  # selecting the root element, if name not given, can be done with :root in
+  # css selectors, and / in XPath
+  # making the name blank makes it unselectable by tag name
+  opts.name = '' if opts.json and not opts.name?
   return new SelecTree obj, opts
 
 # attach class as property on function

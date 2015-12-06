@@ -5,8 +5,9 @@ NPM_BIN := $(NODE_DIR)/.bin
 COFFEE_CC := $(NPM_BIN)/coffee
 NODE_UNIT := $(NPM_BIN)/nodeunit
 JISON := $(NPM_BIN)/jison
+REGENERATOR := $(NPM_BIN)/regenerator
 
-DEPS := $(COFFEE_CC) $(NODE_UNIT) $(JISON)
+DEPS := $(COFFEE_CC) $(NODE_UNIT) $(JISON) $(REGENERATOR)
 
 SRC_DIR := src
 SRC_IN := $(wildcard $(SRC_DIR)/*.coffee)
@@ -32,8 +33,10 @@ distclean: clean
 test: all $(TEST_OUT) $(NODE_UNIT)
 	$(NODE_UNIT) $(TEST_OUT)
 
+REGENERATOR_WRAPPER := regenerator-wrapper.sh
 %.js: %.coffee $(COFFEE_CC)
-	$(COFFEE_CC) -bc --no-header $<
+	$(COFFEE_CC) -bcp --no-header $< | \
+		$(REGENERATOR_WRAPPER) $(REGENERATOR) -r > $@
 
 JISON_WRAPPER := jison-wrapper.sh
 %.tab.js: %.y %.l $(JISON)
