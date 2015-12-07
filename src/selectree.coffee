@@ -11,7 +11,7 @@ ParseXPath = require './xpath'
 class SelecTree
   # TODO: test this
   # additional parameter 'isRoot' in opts is simply forwarded to @isRoot
-  @OptionalParams: ['json', 'dontFlattenFunctions']
+  @OptionalParams: ['json', 'dontFlattenFunctions', 'class', 'id']
   @Params: ['name', 'children', 'attributes', 'content']
 
   @ValidateArgs: (opts) ->
@@ -53,6 +53,16 @@ class SelecTree
 
   name: -> if @opts.json then @opts.name
   else @constructor.StringOrFunOptions @obj, @opts, 'name'
+
+  class: ->
+    if @opts.class?
+      @constructor.StringOrFunOptions @obj, @opts, 'class'
+    else @attributes().class
+
+  id: ->
+    if @opts.id?
+      @constructor.StringOrFunOptions @obj, @opts, 'id'
+    else @attributes().id
 
   @GetArrayChildren: (obj, opts) => obj.map (o, ind) =>
     newOpts = @CloneOpts opts

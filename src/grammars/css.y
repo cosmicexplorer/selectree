@@ -1,6 +1,11 @@
 /* pulled from http://www.w3.org/TR/css3-selectors/#grammar */
+
 %ebnf
 %start selectors_group
+
+%{
+   var matchers = require('../css-matchers');
+%}
 
 %%
 
@@ -78,8 +83,17 @@ id_or_string
   | STRING
   ;
 
+attrib_start
+  : '[' S* IDENT S*
+  ;
+
+attrib_end
+  : ']'
+  ;
+
 attrib
-  : '[' S* IDENT S* (attrib_match S* id_or_string S*)? ']'
+  : attrib_start attrib_end
+  | attrib_start attrib_match S* id_or_string S* attrib_end
   ;
 
 id_or_pseudo
@@ -92,7 +106,8 @@ pseudo
   /* Exceptions: :first-line, :first-letter, :before and :after. */
   /* Note that pseudo-elements are restricted to one per selector and */
   /* occur only in the last simple_selector_sequence. */
-  : ':' ':'? id_or_pseudo
+  : ':' id_or_pseudo
+  | ':' ':' id_or_pseudo
   ;
 
 functional_pseudo
