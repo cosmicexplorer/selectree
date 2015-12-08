@@ -3,12 +3,6 @@
 _ = require 'lodash'
 uuid = require 'node-uuid'
 
-# use for testing grammar
-# {parse} = require './grammars/css.tab'
-# listener = (line) -> console.log parse line.toString().trim()
-# process.stdin.on 'data', listener
-# process.stdin.on 'end', -> process.stdin.removeListener 'data', listener
-
 # turns functions of type (child) -> to type (children, index) ->
 getChildIndexMacro = (f) -> (children, index) -> f children[index]
 # tag names

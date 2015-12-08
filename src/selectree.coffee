@@ -1,6 +1,6 @@
 stream = require 'stream'
 util = require './util'
-ParseCSS = require './css'
+ParseCSS = require('./grammars/css.tab').parse
 ParseXPath = require './xpath'
 {SelectStream} = require './streams'
 

@@ -1,5 +1,7 @@
+{parse} = require '../src/grammars/css.tab'
+
 module.exports =
-  'test1': (test) ->
+  'parseSomething': (test) ->
     test.expect 1
-    test.ok true
+    test.ok parse 'a'
     test.done()

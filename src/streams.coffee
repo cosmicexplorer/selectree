@@ -4,7 +4,7 @@ class SelectStream extends stream.Readable
   constructor: (treeObj, selector, traverseFun, opts = {}) ->
     opts.objectMode = yes
     super opts
-    @traverser = traverseFun treeObj, selector
+    @traverser = match treeObj, traverseFun(selector)
 
   traverse: ->
     next = @traverser.next()

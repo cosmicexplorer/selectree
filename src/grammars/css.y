@@ -4,7 +4,7 @@
 %start selectors_group
 
 %{
-var m = require('../css-matchers');
+var m = require('./css-matchers');
 %}
 
 %%
