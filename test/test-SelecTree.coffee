@@ -4,24 +4,25 @@ module.exports =
   'construction': (test) ->
     test.expect 5
     test.throws (-> new SelecTree {}), "no options"
-    test.throws (-> new SelecTree {}, {}), "not enough options"
-    test.doesNotThrow (-> new SelecTree {},
+    test.throws (-> new SelecTree {}, {xml: yes}), "not enough options"
+    test.doesNotThrow (-> new SelecTree {xml: yes},
       name: "testName"
       children: "testChildren"
       attributes: "testAttributes"
       content: "testContent"), "enough options given"
-    test.throws (-> new SelecTree {}, {json: yes}), "no name option"
-    test.doesNotThrow (-> new SelecTree {}, {json: yes, name: "test"}),
+    test.throws (-> new SelecTree {}), "no name option"
+    test.doesNotThrow (-> new SelecTree {}, {name: "test"}),
       "name given"
     test.done()
 
   'name': (test) ->
     test.expect 4
     # json only allows direct string name
-    jsonName = new SelecTree {}, {json: yes, name: "test"}
+    jsonName = new SelecTree {}, {name: "test"}
     test.strictEqual jsonName.name(), "test", "json can't find correct name"
 
     xmlOptsStr =
+      xml: yes
       name: 'nameField'
       children: 'childField'
       attributes: 'attrField'
@@ -44,7 +45,6 @@ module.exports =
   'children (json)': (test) ->
     test.expect 9
     opts =
-      json: yes
       name: "base"
 
     jsonBaseType = null
@@ -79,6 +79,7 @@ module.exports =
           {tag: 'leaf', content: 'hey'}]}]
 
     stringOpts =
+      xml: yes
       name: 'tag'
       children: 'children'
       attributes: 'attrs'
@@ -109,6 +110,7 @@ module.exports =
           {tag: 'leaf', content: 'hey'}]}]
 
     funOpts =
+      xml: yes
       name: 'tag'
       children: (obj) -> obj.children
       attributes: 'attrs'
@@ -134,6 +136,7 @@ module.exports =
     obj = content: f
 
     flattenOpts =
+      xml: yes
       name: 'test'
       children: 'test'
       attributes: 'test'
@@ -152,13 +155,14 @@ module.exports =
     obj =
       a: 1
       b: 2
-    tree = new SelecTree obj, {name: 'base', json: yes}
+    tree = new SelecTree obj, {name: 'base'}
     test.deepEqual tree.attributes(), obj, "invalid attributes"
     test.done()
 
   'attributes (xml)': (test) ->
     test.expect 2
     opts =
+      xml: yes
       name: 'test',
       children: 'test',
       attributes: 'attrs',

@@ -7,7 +7,7 @@ ParseXPath = require './xpath'
 
 class SelecTree
   # TODO: test class, id
-  @OptionalParams: ['json', 'dontFlattenFunctions', 'class', 'id']
+  @OptionalParams: ['xml', 'dontFlattenFunctions', 'class', 'id']
   @Params: ['name', 'children', 'attributes', 'content']
 
   # some form of basic integrity checking, could be improved
@@ -17,10 +17,10 @@ class SelecTree
 
   @ValidateArgs: (opts) ->
     if not opts? then throw new Error "no traversal options given!"
-    else if not opts.json?
+    else if opts.xml?
       if (not @Params.every (p) -> opts[p]?)
         throw new Error "not all traversal options [#{@Params.join ','}] given!"
-    else if opts.json? and not opts.name?
+    else if not opts.name?
       throw new Error "no 'name' parameter given for json object!"
 
   @CloneOpts: (opts) ->
@@ -32,11 +32,11 @@ class SelecTree
     newOpts
 
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
-    if opts.json and not opts.children?
+    if opts.xml or opts.children? then xmlFun? obj, opts
+    else
       if util.isArray obj then arrFun obj, opts
       else if util.isObject obj then objFun? obj, opts
       else valueFun? obj, opts
-    else xmlFun? obj, opts
 
   @StringOrFunOptions: (obj, opts, field) ->
     strOrFun = opts[field]
@@ -49,9 +49,11 @@ class SelecTree
 
   constructor: (@obj, @opts, @parent = null) ->
     @constructor.ValidateArgs @opts
+    # TODO: add test for @cachedChildren; ensure they're actually cached
+    @cachedChildren = null
 
-  name: -> if @opts.json then @opts.name
-  else @constructor.StringOrFunOptions @obj, @opts, 'name'
+  name: -> if @opts.xml then @constructor.StringOrFunOptions @obj, @opts, 'name'
+  else @opts.name
 
   class: ->
     if @opts.class?
@@ -83,16 +85,22 @@ class SelecTree
       new SelecTree v, newOpts, thisObj
   @GetEmptyChild: -> []
   children: ->
-    if @opts.children?
-      childrenArr = @constructor.StringOrFunOptions @obj, @opts, 'children'
-      if childrenArr instanceof Array
-        childrenArr.map (o) => new SelecTree o, @opts, @
-      else throw new Error "children not an array!"
-    else
-      @constructor.EachCaseOfOpts @, @opts,
-        @constructor.GetArrayChildren,
-        @constructor.GetObjectChildren,
-        @constructor.GetEmptyChild
+    # @cachedChildren is maybe a perf boost, but mostly so that we can rely on
+    # children always being the same objects each time, which allows us to use
+    # weak maps or bloom filters to see if we've already hit the children
+    if not @cachedChildren?
+      @cachedChildren =
+        if @opts.children?
+          childrenArr = @constructor.StringOrFunOptions @obj, @opts, 'children'
+          if childrenArr instanceof Array
+            childrenArr.map (o) => new SelecTree o, @opts, @
+          else throw new Error "children not an array!"
+        else
+          @constructor.EachCaseOfOpts @, @opts,
+            @constructor.GetArrayChildren,
+            @constructor.GetObjectChildren,
+            @constructor.GetEmptyChild
+    @cachedChildren
 
   @GetEmptyContent: -> null
   content: ->
@@ -103,10 +111,10 @@ class SelecTree
       ((obj, opts) => @constructor.StringOrFunOptions obj, opts, 'content')
 
   attributes: ->
-    if @opts.json and not @opts.attributes? then @obj
-    else
+    if @opts.xml or @opts.attributes?
       res = @constructor.StringOrFunOptions @obj, @opts, 'attributes'
       if res? then res else {}
+    else @obj
 
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
@@ -123,7 +131,7 @@ selectree = (obj, opts = {}) ->
   # selecting the root element, if name not given, can be done with :root in
   # css selectors, and / in XPath
   # making the name blank makes it unselectable by tag name
-  opts.name = '' if opts.json and not opts.name?
+  opts.name = '' unless opts.xml or opts.name?
   return new SelecTree obj, opts
 
 # attach class as property on function
