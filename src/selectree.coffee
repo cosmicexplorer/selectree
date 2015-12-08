@@ -5,6 +5,16 @@ ParseCSS = require('./grammars/css.tab').parse
 ParseXPath = require './xpath'
 {SelectStream} = require './streams'
 
+# utility function
+StringOrFunOptions = (obj, opts, field) ->
+  strOrFun = opts[field]
+  noCall = opts.dontFlattenFunctions
+  res = switch
+    when util.isString strOrFun then obj[strOrFun]
+    when util.isFunction strOrFun then strOrFun obj
+    else throw new Error "option not string nor function!"
+  if not noCall and util.isFunction res then res() else res
+
 class SelecTree
   # TODO: test class, id
   @OptionalParams: ['xml', 'dontFlattenFunctions', 'class', 'id']
@@ -38,31 +48,22 @@ class SelecTree
       else if util.isObject obj then objFun? obj, opts
       else valueFun? obj, opts
 
-  @StringOrFunOptions: (obj, opts, field) ->
-    strOrFun = opts[field]
-    noCall = opts.dontFlattenFunctions
-    res = switch
-      when util.isString strOrFun then obj[strOrFun]
-      when util.isFunction strOrFun then strOrFun obj
-      else throw new Error "option not string nor function!"
-    if not noCall and util.isFunction res then res() else res
-
   constructor: (@obj, @opts, @isRoot = no) ->
     @constructor.ValidateArgs @opts
     # TODO: add test for @cachedChildren; ensure they're actually cached
     @cachedChildren = null
 
-  name: -> if @opts.xml then @constructor.StringOrFunOptions @obj, @opts, 'name'
+  name: -> if @opts.xml then StringOrFunOptions @obj, @opts, 'name'
   else @opts.name
 
   class: ->
     if @opts.class?
-      @constructor.StringOrFunOptions @obj, @opts, 'class'
+      StringOrFunOptions @obj, @opts, 'class'
     else @attributes().class
 
   id: ->
     if @opts.id?
-      @constructor.StringOrFunOptions @obj, @opts, 'id'
+      StringOrFunOptions @obj, @opts, 'id'
     else @attributes().id
 
   isRoot: -> @isRoot
@@ -90,7 +91,7 @@ class SelecTree
     if not @cachedChildren?
       @cachedChildren =
         if @opts.children?
-          childrenArr = @constructor.StringOrFunOptions @obj, @opts, 'children'
+          childrenArr = StringOrFunOptions @obj, @opts, 'children'
           if childrenArr instanceof Array
             childrenArr.map (o) => new SelecTree o, @opts, @
           else throw new Error "children not an array!"
@@ -107,23 +108,37 @@ class SelecTree
       @constructor.GetEmptyContent,
       @constructor.GetEmptyContent,
       (=> @obj),
-      ((obj, opts) => @constructor.StringOrFunOptions obj, opts, 'content')
+      ((obj, opts) => StringOrFunOptions obj, opts, 'content')
 
   attributes: ->
     if @opts.xml or @opts.attributes?
-      res = @constructor.StringOrFunOptions @obj, @opts, 'attributes'
+      res = StringOrFunOptions @obj, @opts, 'attributes'
       if res? then res else {}
     else @obj
 
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
-# TODO: consider being able to take a list of nodes, each with a 'parent'
-# attribute/function (as an object key or in options object), instead of a
-# 'children' attribute/function, and transform it into a SelecTree as well
+# TODO: add tests for this
 fromParents = (nodesWithParents, opts = {}) ->
-  throw new Error "must provide parent field in opts" if not opts.parent?
-  # TODO: continue to write this
+  throw new Error "must provide parent field in opts" unless opts.parent?
+  objAndParent = nodesWithParents.map (obj) ->
+    obj: obj
+    parent: StringOrFunOptions obj, opts, 'parent'
+  parentObjs = new Map
+  root = null
+  for node in nodesWithParents
+    parent = StringOrFunOptions node, opts, 'parent'
+    if not parent?
+      if root? then throw new Error "multiple parents (nodes without roots)"
+      else root = node
+    else
+      prevParent = parentObjs.get parent
+      if prevParent? then prevParent.push node
+      else parentObjs.set parent, [node]
+  finalOpts = SelecTree.CloneOpts opts
+  finalOpts.children = (node) -> parentObjs.get node
+  new SelecTree root, finalOpts, yes
 
 # massage input a bit
 selectree = (obj, opts = {}) ->
@@ -131,7 +146,7 @@ selectree = (obj, opts = {}) ->
   # css selectors, and / in XPath
   # making the name blank makes it unselectable by tag name
   opts.name = '' unless opts.xml or opts.name?
-  return new SelecTree obj, opts, yes
+  new SelecTree obj, opts, yes
 
 # attach class as property on function
 selectree.SelecTree = SelecTree
