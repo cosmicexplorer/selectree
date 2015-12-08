@@ -32,16 +32,27 @@ of any other node, they are assumed to have been discarded and NOT given to
 match.
 ###
 
+# use uuids to uniquify descendant matchers
+uniquifyMatchers = (matchers) ->
+  idsHit = {}
+  for matcher in matchers
+    id = matcher.matcherId
+    if not id? then matcher
+    else if idsHit[id]? then continue
+    else
+      idsHit[id] = yes
+      matcher
+
 # node is a SelecTree node, matchers are functions as described above
 match = (node, origMatchers, secondaryMatchers = []) ->
   children = node.children()
-  allMatchers = origMatchers.concat secondaryMatchers
+  allMatchers = uniquifyMatchers origMatchers.concat secondaryMatchers
   immediateMatchers = []        # matchers used for immediate siblings (css: +)
   for child, index in children
     # refersToRoot MUST be supported by client for performance
     # filter out absolute paths
     newOrigMatchers =
-      if node.isRoot then origMatchers.filter (m) -> not m.refersToRoot
+      if node.isRoot() then origMatchers.filter (m) -> not m.refersToRoot
       else origMatchers
     newSecondaryMatchers = []
     newImmediateMatchers = []   # swap with immediateMatchers
@@ -56,7 +67,9 @@ match = (node, origMatchers, secondaryMatchers = []) ->
             if matchResult.isForSameSiblings then allMatchers
             else if matchResult.isForImmediateSibling then newImmediateMatchers
             else newSecondaryMatchers
-          arrayToPush.push matchResult
+          if matchResult instanceof Array
+            arrayToPush = arrayToPush.concat matchResult
+          else arrayToPush.push matchResult
     immediateMatchers = newImmediateMatchers # swap
     # depth-first search
     results = match child, newOrigMatchers, newSecondaryMatchers

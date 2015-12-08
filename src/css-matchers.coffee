@@ -1,6 +1,7 @@
 # drawn from http://www.w3.org/TR/css3-selectors/#selectors
 
 _ = require 'lodash'
+uuid = require 'node-uuid'
 
 # use for testing grammar
 # {parse} = require './grammars/css.tab'
@@ -47,7 +48,7 @@ classSelector = (classSel) -> getChildIndexMacro (child) ->
   attributeMatchMap['~='] child.class(), _.escapeRegExp classSel
 
 pseudoClassMap =
-  'root': getChildIndexMacro (child) -> child.isRoot
+  'root': getChildIndexMacro (child) -> child.isRoot()
   'first-child': (children, index) -> index is 0
   'last-child': (children, index) -> index is children.length - 1
   'first-of-type': (children, index) ->
@@ -70,30 +71,77 @@ pseudoClassMap =
     return true
   'empty': getChildIndexMacro (child) -> child.children().length is 0
 
-# this works because the matcher is guaranteed to be a simple matcher; it will
-# only return 'yes' or 'no', no intermediate states
-negationPseudoClass = (matcher) -> (args...) -> not matcher args...
-
 pseudoClass = (pclass) ->
   pseudoClassMap[pclass] ?
     throw new Error "unrecognized pseudo class #{pclass}"
 
-# TODO: make some an+b/odd/even expression parser
-functionalPseudoClass = (pclass, expr) -> switch pclass
-  when 'nth-child' then (children, index) -> index
-  else throw new Error "unrecognized functional pseudo class #{pclass}"
+# this works because the matcher is guaranteed to be a simple matcher; it will
+# only return 'yes' or 'no', no intermediate states
+negationPseudoClass = (matcher) -> (args...) -> not matcher args...
+
+functionalPseudoClassMap =
+  'nth-child': (children, index, recognizer) -> recognizer index
+  'nth-last-child': (children, index, recognizer) ->
+    recognizer(children.length - index)
+  'nth-of-type': (children, index, recognizer) ->
+    current = children[index]
+    type = current.name()
+    index = 0
+    for child, i in children.filter((c) -> c.name() is type)
+      if child is current
+        index = i
+        break
+    recognizer index
+  'nth-last-of-type': (children, index, recognizer) ->
+    current = children[index]
+    type = current.name()
+    filtered = children.filter (c) -> c.name() is type
+    index = filtered.length - 1
+    for child, i in filtered
+      if child is current
+        index = i
+        break
+    recognizer(filtered.length - index)
+
+parseA_N_Plus_BExpr = (expr) ->
+  multipleMatch = expr.match(/^((?:\-|\+)?[0-9]+)N/i)?[1]
+  multiple = if multipleMatch? then parseInt multipleMatch else 1
+  offsetMatch = expr.match(/(?:\-|\+)([0-9]+)$/)?[1]
+  offset = if offsetMatch? then parseInt offsetMatch else 0
+  (num) ->
+    res = num - offset
+    if res < 0 then no else res % multiple == 0
+
+parseOddExpr = -> (num) -> num % 2 == 1
+parseEvenExpr = -> (num) -> num % 2 == 0
+
+parseFunctionalPseudoClass = (pclass) -> pclass[..-2]
+
+functionalPseudoClass = (pclass, recognizer) ->
+  fn = functionalPseudoClassMap[pclass] ?
+    throw new Error "unrecognized functional pseudo class #{pclass}"
+  (children, index) -> fn children, index, recognizer
 
 pseudoElement = (el) ->
   throw new Error "pseudo-elements (#{el}) are not supported"
 
+combineSimpleSelectorSequence = (matchers) -> (children, index) ->
+  for matcher in matchers
+    return no unless matcher children, index
+  yes
+
 # combinators
-descendant = (matcher1, matcher2) -> (children, index) ->
-  if matcher1 children, index
-    respawnMatcher2 = (children, index) ->
-      res = matcher2 children, index
-      if res then res else respawnMatcher2
-    respawnMatcher2
-  else no
+descendant = (matcher1, matcher2) ->
+  matcherId = uuid.v4()         # for all created descendants, have same id
+  (children, index) ->
+    if matcher1 children, index
+      respawnMatcher2 = (children, index) ->
+        res = matcher2 children, index
+        # even if matched, still respawn self
+        if res then [res, respawnMatcher2] else respawnMatcher2
+      respawnMatcher2.matcherId = matcherId
+      respawnMatcher2
+    else no
 
 directDescendant = (matcher1, matcher2) -> (children, index) ->
   if matcher1 children, index then matcher2 else no
@@ -111,3 +159,32 @@ siblingImmediatelyAfter = (matcher1, matcher2) -> (children, index) ->
     immediateSiblingMatcher.isForImmediateSibling = yes
     immediateSiblingMatcher
   else no
+
+combinatorMap =
+  'descendant': descendant
+  '>': directDescendant
+  '~': siblingAfter
+  '+': siblingImmediatelyAfter
+
+doCombination = (simpleSeq, combinatorsArr) ->
+  reducer = (matcher, combinatorObj) ->
+    combinatorMap[combinatorObj.combinator] matcher, combinatorObj.seq
+  combinatorsArr.reduce reducer, simpleSeq
+
+module.exports = {
+  element
+  attributeExists
+  attributeMatch
+  idSelector
+  classSelector
+  pseudoClass
+  negationPseudoClass
+  parseA_N_Plus_BExpr
+  parseEvenExpr
+  parseOddExpr
+  parseFunctionalPseudoClass
+  functionalPseudoClass
+  pseudoElement
+  combineSimpleSelectorSequence
+  doCombination
+}

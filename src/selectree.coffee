@@ -10,7 +10,6 @@ ParseXPath = require './xpath'
 
 class SelecTree
   # TODO: test this
-  # additional parameter 'isRoot' in opts is simply forwarded to @isRoot
   @OptionalParams: ['json', 'dontFlattenFunctions', 'class', 'id']
   @Params: ['name', 'children', 'attributes', 'content']
 
@@ -47,9 +46,8 @@ class SelecTree
       else throw new Error "option not string nor function!"
     if not noCall and util.isFunction res then res() else res
 
-  constructor: (@obj, @opts) ->
+  constructor: (@obj, @opts, @parent = null) ->
     @constructor.ValidateArgs @opts
-    @isRoot = if @opts.isRoot then yes else no
 
   name: -> if @opts.json then @opts.name
   else @constructor.StringOrFunOptions @obj, @opts, 'name'
@@ -64,24 +62,30 @@ class SelecTree
       @constructor.StringOrFunOptions @obj, @opts, 'id'
     else @attributes().id
 
-  @GetArrayChildren: (obj, opts) => obj.map (o, ind) =>
-    newOpts = @CloneOpts opts
-    newOpts.name = ind.toString()
-    new SelecTree o, newOpts
-  @GetObjectChildren: (obj, opts) =>
+  parent: -> @parent
+  isRoot: -> not @parent?
+
+  @GetArrayChildren: (thisObj, opts) =>
+    obj = thisObj.obj
+    obj.map (o, ind) =>
+      newOpts = @CloneOpts opts
+      newOpts.name = ind.toString()
+      new SelecTree o, newOpts, thisObj
+  @GetObjectChildren: (thisObj, opts) =>
+    obj = thisObj.obj
     for k, v of obj
       newOpts = @CloneOpts opts
       newOpts.name = k
-      new SelecTree v, newOpts
+      new SelecTree v, newOpts, thisObj
   @GetEmptyChild: -> []
   children: ->
     if @opts.children?
       childrenArr = @constructor.StringOrFunOptions @obj, @opts, 'children'
       if childrenArr instanceof Array
-        childrenArr.map (o) => new SelecTree o, @opts
+        childrenArr.map (o) => new SelecTree o, @opts, @
       else throw new Error "children not an array!"
     else
-      @constructor.EachCaseOfOpts @obj, @opts,
+      @constructor.EachCaseOfOpts @, @opts,
         @constructor.GetArrayChildren,
         @constructor.GetObjectChildren,
         @constructor.GetEmptyChild
@@ -105,7 +109,6 @@ class SelecTree
 
 # massage input a bit
 selectree = (obj, opts = {}) ->
-  opts.isRoot ?= yes
   # selecting the root element, if name not given, can be done with :root in
   # css selectors, and / in XPath
   # making the name blank makes it unselectable by tag name

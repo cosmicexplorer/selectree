@@ -47,4 +47,10 @@ V         v|\\0{0,4}(58|78)(\r\n|[ \t\r\n\f])?|\\v
 {invalid}        return 'INVALID'
 {num}%           return 'PERCENTAGE'
 {num}{ident}     return 'DIMENSION'
+[0-9]+           return 'INTEGER'
+{O}              return 'O'
+{D}              return 'D'
+{E}              return 'E'
+{V}              return 'V'
+{N}              return 'N'
 .                return yytext

@@ -4,16 +4,16 @@
 %start selectors_group
 
 %{
-   var matchers = require('../css-matchers');
+var m = require('../css-matchers');
 %}
 
 %%
 
 selectors_group
   : selector comma_space_selector*
-      {console.log($2); return $1;}
+      {return [$1].concat($2);}
   | error
-      {return 'ERR' + $1;}
+      {return 'ERR: ' + $1;}
   ;
 
 comma_space_selector
@@ -21,12 +21,11 @@ comma_space_selector
   ;
 
 comb_select_seq
-  : combinator simple_selector_sequence -> $1 + $2
+  : combinator simple_selector_sequence -> {combinator: $1, seq: $2}
   ;
 
 selector
-  : simple_selector_sequence comb_select_seq*
-      {console.log($2); $$ = $1;}
+  : simple_selector_sequence comb_select_seq* -> m.doCombination($1, $2)
   ;
 
 combinator
@@ -35,7 +34,7 @@ combinator
   : PLUS S* -> $1 /* immediate neighbor */
   | TILDE S* -> $1 /* neighbor */
   | GREATER S* -> $1 /* direct descendant */
-  | S+ /* descendant */
+  | S+ -> 'descendant' /* descendant */
   ;
 
 simple_selector_startseq
@@ -43,8 +42,12 @@ simple_selector_startseq
   | universal
   ;
 
+hash_sel
+  : HASH -> m.idSelector($1)
+  ;
+
 simple_selector_endseq
-  : HASH
+  : hash_sel
   | class
   | attrib
   | pseudo
@@ -53,20 +56,20 @@ simple_selector_endseq
 
 simple_selector_sequence
   : simple_selector_startseq simple_selector_endseq*
-      {console.log($1); $$ = $1;}
-  | simple_selector_endseq+
+      {$$ = m.combineSimpleSelectorSequence([$1].concat($2));}
+  | simple_selector_endseq+ -> m.combineSimpleSelectorSequence($1)
   ;
 
 element_name
-  : IDENT
+  : IDENT -> m.element($1)
   ;
 
 universal
-  : '*'
+  : '*' -> m.element($1)
   ;
 
 class
-  : '.' IDENT
+  : '.' IDENT -> m.classSelector($2)
   ;
 
 attrib_match
@@ -80,11 +83,11 @@ attrib_match
 
 id_or_string
   : IDENT
-  | STRING
+  | STRING -> $1.substr(0, $1.length - 2)
   ;
 
 attrib_start
-  : '[' S* IDENT S*
+  : '[' S* IDENT S* -> $3
   ;
 
 attrib_end
@@ -92,11 +95,12 @@ attrib_end
   ;
 
 attrib
-  : attrib_start attrib_end
+  : attrib_start attrib_end -> m.attributeExists($1)
   | attrib_start attrib_match S* id_or_string S* attrib_end
+      {$$ = m.attributeMatch($1, $2, $4);}
   ;
 
-id_or_pseudo
+id_or_pseudofun
   : IDENT
   | functional_pseudo
   ;
@@ -106,37 +110,40 @@ pseudo
   /* Exceptions: :first-line, :first-letter, :before and :after. */
   /* Note that pseudo-elements are restricted to one per selector and */
   /* occur only in the last simple_selector_sequence. */
-  : ':' id_or_pseudo
-  | ':' ':' id_or_pseudo
+  : ':' id_or_pseudofun -> m.pseudoClass($2)
+  | ':' ':' id_or_pseudofun -> m.pseudoElement($3)
+  ;
+
+function_call
+  : FUNCTION -> m.parseFunctionalPseudoClass($1)
   ;
 
 functional_pseudo
-  : FUNCTION S* expression ')'
+  : function_call S* expression S* ')' -> m.functionalPseudoClass($1, $3)
   ;
 
-expr_alternatives
-  : PLUS
-  | '-'
-  | DIMENSION
-  | NUMBER
-  | STRING
-  | IDENT
-  ;
-
+/* amending this from the given grammar to match the 'nth' grammar, given in
+   the same document cited above. all functional pseudo-classes only accept
+   "an+b"-type expressions */
+/* nth */
 expression
-  /* In CSS3, the expressions are identifiers, strings, */
-  /* or of the form "an+b" */
-  : (expr_alternatives S*)+
+  : a_n_plus_b -> m.parseA_N_Plus_BExpr($1)
+  | O D D -> m.parseOddExpr()
+  | E V E N -> m.parseEvenExpr()
+  ;
+
+a_n_plus_b
+  : ('-'|'+')? INTEGER? N (('-'|'+') INTEGER)?
   ;
 
 negation
-  : NOT S* negation_arg S* ')'
+  : NOT S* negation_arg S* ')' -> m.negationPseudoClass($3)
   ;
 
 negation_arg
   : element_name
   | universal
-  | HASH
+  | hash_sel
   | class
   | attrib
   | pseudo

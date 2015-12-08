@@ -13,6 +13,7 @@
     "regenerator": "^0.8.42"
   },
   "dependencies": {
-    "lodash": "^3.10.1"
+    "lodash": "^3.10.1",
+    "node-uuid": "^1.4.7"
   }
 }
