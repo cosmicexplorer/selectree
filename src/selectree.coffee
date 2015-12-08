@@ -1,24 +1,33 @@
 stream = require 'stream'
+_ = require 'lodash'
 util = require './util'
 ParseCSS = require('./grammars/css.tab').parse
 ParseXPath = require './xpath'
 {SelectStream} = require './streams'
 
-# TODO: consider being able to take a list of nodes, each with only a 'parent'
-# attribute/function (as an object key or in options object), and transform it
-# into a SelecTree as well
+# TODO: consider being able to take a list of nodes, each with a 'parent'
+# attribute/function (as an object key or in options object), instead of a
+# 'children' attribute/function, and transform it into a SelecTree as well
 
 class SelecTree
-  # TODO: test this
+  # TODO: test class, id
   @OptionalParams: ['json', 'dontFlattenFunctions', 'class', 'id']
-  @Params: ['name', 'children', 'attributes', 'content']
+  @Params: ['name', 'attributes', 'content']
+  @AncestryParams: ['children', 'parent']
+
+  # some form of basic integrity checking, could be improved
+  AllParams = @OptionalParams.concat(@Params).concat(@AncestryParams)
+  if AllParams.length > _.uniq(AllParams).length
+    throw new util.InternalError "overlapping parameter fields"
 
   @ValidateArgs: (opts) ->
     if not opts? then throw new Error "no traversal options given!"
-    else if (not opts.json? and
-             not @Params.every (p) -> opts[p]?)
-      errstr = "not all traversal options [#{@Params.join ','}] given!"
-      throw new Error errstr
+    else if not opts.json?
+      if (not @Params.every (p) -> opts[p]?)
+        throw new Error "not all traversal options [#{@Params.join ','}] given!"
+      else if (not @AncestryParams.some (p) -> opts[p]?)
+        throw new Error "no ancestry options [#{@AncestryParams.join ','}]
+          given!"
     else if opts.json? and not opts.name?
       throw new Error "no 'name' parameter given for json object!"
 
@@ -26,7 +35,7 @@ class SelecTree
     newOpts = {}
     newOpts[param] = opts[param] for param in @Params
     # one-line version of this is compiling to some weird lambda
-    for param in @OptionalParams
+    for param in @OptionalParams.concat @AncestryParams
       newOpts[param] = opts[param] if opts[param]?
     newOpts
 
