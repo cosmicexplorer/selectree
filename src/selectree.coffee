@@ -12,11 +12,10 @@ ParseXPath = require './xpath'
 class SelecTree
   # TODO: test class, id
   @OptionalParams: ['json', 'dontFlattenFunctions', 'class', 'id']
-  @Params: ['name', 'attributes', 'content']
-  @AncestryParams: ['children', 'parent']
+  @Params: ['name', 'children', 'attributes', 'content']
 
   # some form of basic integrity checking, could be improved
-  AllParams = @OptionalParams.concat(@Params).concat(@AncestryParams)
+  AllParams = @OptionalParams.concat(@Params)
   if AllParams.length > _.uniq(AllParams).length
     throw new util.InternalError "overlapping parameter fields"
 
@@ -25,9 +24,6 @@ class SelecTree
     else if not opts.json?
       if (not @Params.every (p) -> opts[p]?)
         throw new Error "not all traversal options [#{@Params.join ','}] given!"
-      else if (not @AncestryParams.some (p) -> opts[p]?)
-        throw new Error "no ancestry options [#{@AncestryParams.join ','}]
-          given!"
     else if opts.json? and not opts.name?
       throw new Error "no 'name' parameter given for json object!"
 
@@ -35,7 +31,7 @@ class SelecTree
     newOpts = {}
     newOpts[param] = opts[param] for param in @Params
     # one-line version of this is compiling to some weird lambda
-    for param in @OptionalParams.concat @AncestryParams
+    for param in @OptionalParams
       newOpts[param] = opts[param] if opts[param]?
     newOpts
 
