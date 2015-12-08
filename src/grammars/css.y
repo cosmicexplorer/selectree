@@ -22,7 +22,7 @@ comma_space_selector
   ;
 
 comb_select_seq
-  : combinator simple_selector_sequence -> {combinator: $1, seq: $2}
+  : combinator simple_selector_sequence -> {combinator: $1.trim(), seq: $2}
   ;
 
 selector
@@ -32,9 +32,9 @@ selector
 combinator
   /* combinators can be surrounded by whitespace */
   /* "neighbor" means have same parent */
-  : PLUS S* -> $1 /* immediate neighbor */
-  | TILDE S* -> $1 /* neighbor */
-  | GREATER S* -> $1 /* direct descendant */
+  : PLUS S* /* immediate neighbor */
+  | TILDE S* /* neighbor */
+  | GREATER S* /* direct descendant */
   | S+ -> 'descendant' /* descendant */
   ;
 

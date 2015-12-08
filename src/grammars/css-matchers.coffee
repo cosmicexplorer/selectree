@@ -134,7 +134,9 @@ descendant = (matcher1, matcher2) ->
       respawnMatcher2 = (children, index) ->
         res = matcher2 children, index
         # even if matched, still respawn self
-        if res then [res, respawnMatcher2] else respawnMatcher2
+        switch res
+          when no then respawnMatcher2
+          else [res, respawnMatcher2]
       respawnMatcher2.matcherId = matcherId
       respawnMatcher2
     else no

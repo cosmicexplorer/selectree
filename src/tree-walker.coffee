@@ -44,36 +44,39 @@ uniquifyMatchers = (matchers) ->
       matcher
 
 # node is a SelecTree node, matchers are functions as described above
-match = (node, origMatchers, secondaryMatchers = []) ->
-  children = node.children()
-  allMatchers = uniquifyMatchers origMatchers.concat secondaryMatchers
+match = (node, matchers) -> matchHelper [node], matchers, []
+
+matchHelper = (children, origMatchers, secondaryMatchers) ->
+  allMatchers = uniquifyMatchers origMatchers.concat(secondaryMatchers)
   immediateMatchers = []        # matchers used for immediate siblings (css: +)
   for child, index in children
-    # refersToRoot MUST be supported by client for performance
+    # FIXME: make .css(), .xpath() support refersToRoot
+    # refersToRoot should be supported by client for performance
     # filter out absolute paths
-    newOrigMatchers =
-      if node.isRoot() then origMatchers.filter (m) -> not m.refersToRoot
-      else origMatchers
+    newOrigMatchers = origMatchers
+      # FIXME: do this
+      # if node.isRoot() then origMatchers.filter (m) -> not m.refersToRoot
+      # else origMatchers
     newSecondaryMatchers = []
     newImmediateMatchers = []   # swap with immediateMatchers
     for matcher in allMatchers.concat immediateMatchers
       matchResult = matcher children, index
-      switch matchResult
-        when yes then yield child
-        when no
-        else
-          arrayToPush =
-            # add to allMatchers, but just for this node
-            if matchResult.isForSameSiblings then allMatchers
-            else if matchResult.isForImmediateSibling then newImmediateMatchers
-            else newSecondaryMatchers
-          if matchResult instanceof Array
-            arrayToPush = arrayToPush.concat matchResult
-          else arrayToPush.push matchResult
+      res = if matchResult instanceof Array then matchResult else [matchResult]
+      for matchRes in res
+        switch matchRes
+          when yes then yield child
+          when no
+          else
+            arrayToPush =
+              if matchRes.isForSameSiblings then allMatchers
+              else if matchRes.isForImmediateSibling then newImmediateMatchers
+              else newSecondaryMatchers
+            arrayToPush.push matchRes
     immediateMatchers = newImmediateMatchers # swap
     # depth-first search
-    results = match child, newOrigMatchers, newSecondaryMatchers
-    yield res until (res = results.next()).done
+    childResults = matchHelper child.children(), newOrigMatchers,
+      newSecondaryMatchers
+    yield from childResults
   return
 
 module.exports = {

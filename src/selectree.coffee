@@ -66,6 +66,9 @@ class SelecTree
   parent: -> @parent
   isRoot: -> not @parent?
 
+  # could use generators here, but things like :nth-last-child() require full
+  # enumeration anyway, and most children can fit in memory anyway. streaming
+  # trees is a different problem.
   @GetArrayChildren: (thisObj, opts) =>
     obj = thisObj.obj
     obj.map (o, ind) =>
