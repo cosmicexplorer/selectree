@@ -4,6 +4,7 @@
 %start selectors_group
 
 %{
+var Jison = require('jison');
 var m = require('./css-matchers');
 %}
 

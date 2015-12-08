@@ -6,12 +6,12 @@ outfile=$1
 grammar=$2
 lex=$3
 jison=$4
-echo "$jison" "$grammar" "$lex" -o "$outfile"
-res=$("$jison" "$grammar" "$lex" -o "$outfile")
+echo "$jison" -t "$grammar" "$lex" -o "$outfile"
+res=$("$jison" -t "$grammar" "$lex" -o "$outfile")
 if [ "$res" = "" ]; then
   exit 0
 else
-  rm "$outfile"
+  # rm "$outfile"
   echo "$res" 1>&2
-  exit 1
+  # exit 1
 fi
