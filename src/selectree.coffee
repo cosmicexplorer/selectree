@@ -5,10 +5,6 @@ ParseCSS = require('./grammars/css.tab').parse
 ParseXPath = require './xpath'
 {SelectStream} = require './streams'
 
-# TODO: consider being able to take a list of nodes, each with a 'parent'
-# attribute/function (as an object key or in options object), instead of a
-# 'children' attribute/function, and transform it into a SelecTree as well
-
 class SelecTree
   # TODO: test class, id
   @OptionalParams: ['json', 'dontFlattenFunctions', 'class', 'id']
@@ -112,6 +108,13 @@ class SelecTree
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
+# TODO: consider being able to take a list of nodes, each with a 'parent'
+# attribute/function (as an object key or in options object), instead of a
+# 'children' attribute/function, and transform it into a SelecTree as well
+fromParents = (nodesWithParents, opts = {}) ->
+  throw new Error "must provide parent field in opts" if not opts.parent?
+  # TODO: continue to write this
+
 # massage input a bit
 selectree = (obj, opts = {}) ->
   # selecting the root element, if name not given, can be done with :root in
@@ -122,5 +125,6 @@ selectree = (obj, opts = {}) ->
 
 # attach class as property on function
 selectree.SelecTree = SelecTree
+selectree.fromParents = fromParents
 
 module.exports = selectree
