@@ -47,7 +47,7 @@ class SelecTree
       else throw new Error "option not string nor function!"
     if not noCall and util.isFunction res then res() else res
 
-  constructor: (@obj, @opts, @parent = null) ->
+  constructor: (@obj, @opts, @isRoot = no) ->
     @constructor.ValidateArgs @opts
     # TODO: add test for @cachedChildren; ensure they're actually cached
     @cachedChildren = null
@@ -65,8 +65,7 @@ class SelecTree
       @constructor.StringOrFunOptions @obj, @opts, 'id'
     else @attributes().id
 
-  parent: -> @parent
-  isRoot: -> not @parent?
+  isRoot: -> @isRoot
 
   # could use generators here, but things like :nth-last-child() require full
   # enumeration anyway, and most children can fit in memory anyway. streaming
@@ -132,7 +131,7 @@ selectree = (obj, opts = {}) ->
   # css selectors, and / in XPath
   # making the name blank makes it unselectable by tag name
   opts.name = '' unless opts.xml or opts.name?
-  return new SelecTree obj, opts
+  return new SelecTree obj, opts, yes
 
 # attach class as property on function
 selectree.SelecTree = SelecTree
