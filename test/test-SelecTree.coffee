@@ -30,12 +30,12 @@ module.exports =
     xmlNameString = new SelecTree {nameField: 'test'}, xmlOptsStr
     test.strictEqual xmlNameString.name(), "test", "xml can't find string name"
 
-    xmlOptsFun = SelecTree.CloneOpts xmlOptsStr
+    xmlOptsFun = Object.create xmlOptsStr
     xmlOptsFun.name = (obj) -> obj.nameField
     xmlNameFun = new SelecTree {nameField: 'test'}, xmlOptsFun
     test.strictEqual xmlNameFun.name(), "test", "xml can't find function name"
 
-    xmlNotStringNorFunOpts = SelecTree.CloneOpts xmlOptsStr
+    xmlNotStringNorFunOpts = Object.create xmlOptsStr
     xmlNotStringNorFunOpts.name = {}
     xmlNotStringNorFunObj = new SelecTree {}, xmlNotStringNorFunOpts
     test.throws (-> xmlNotStringNorFunObj.name()),
@@ -144,7 +144,7 @@ module.exports =
     flattenObj = new SelecTree obj, flattenOpts
     test.equal flattenObj.content(), 'test', "invalid flattened result"
 
-    nonFlatOpts = SelecTree.CloneOpts flattenOpts
+    nonFlatOpts = Object.create flattenOpts
     nonFlatOpts.dontFlattenFunctions = yes
     nonFlatObj = new SelecTree obj, nonFlatOpts
     test.equal nonFlatObj.content(), f, "invalid non-flattened result"

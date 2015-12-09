@@ -33,14 +33,6 @@ class SelecTree
     else if not opts.name?
       throw new Error "no 'name' parameter given for json object!"
 
-  @CloneOpts: (opts) ->
-    newOpts = {}
-    newOpts[param] = opts[param] for param in @Params
-    # one-line version of this is compiling to some weird lambda
-    for param in @OptionalParams
-      newOpts[param] = opts[param] if opts[param]?
-    newOpts
-
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
     if opts.xml or opts.children? then xmlFun? obj, opts
     else
@@ -74,13 +66,13 @@ class SelecTree
   @GetArrayChildren: (thisObj, opts) =>
     obj = thisObj.obj
     obj.map (o, ind) =>
-      newOpts = @CloneOpts opts
+      newOpts = Object.create opts
       newOpts.name = ind.toString()
       new SelecTree o, newOpts, thisObj
   @GetObjectChildren: (thisObj, opts) =>
     obj = thisObj.obj
     for k, v of obj
-      newOpts = @CloneOpts opts
+      newOpts = Object.create opts
       newOpts.name = k
       new SelecTree v, newOpts, thisObj
   @GetEmptyChild: -> []
@@ -93,7 +85,7 @@ class SelecTree
         if @opts.children?
           childrenArr = StringOrFunOptions @obj, @opts, 'children'
           if childrenArr instanceof Array
-            childrenArr.map (o) => new SelecTree o, @opts, @
+            childrenArr.map (o) => new SelecTree o, Object.create(@opts), @
           else throw new Error "children not an array!"
         else
           @constructor.EachCaseOfOpts @, @opts,
@@ -130,13 +122,15 @@ fromParents = (nodesWithParents, opts = {}) ->
   for node in nodesWithParents
     parent = StringOrFunOptions node, opts, 'parent'
     if not parent?
-      if root? then throw new Error "multiple parents (nodes without roots)"
+      if root? then throw new Error "multiple roots (nodes without a parent)"
       else root = node
     else
       prevParent = parentObjs.get parent
       if prevParent? then prevParent.push node
       else parentObjs.set parent, [node]
-  finalOpts = SelecTree.CloneOpts opts
+  # FIXME: make CloneOpts return prototypally-inherited version so changes in
+  # opts change finalOpts too (in the fields that are the same)
+  finalOpts = Object.create opts
   finalOpts.children = (node) -> parentObjs.get node
   new SelecTree root, finalOpts, yes
 
