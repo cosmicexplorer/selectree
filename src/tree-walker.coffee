@@ -52,13 +52,11 @@ matchHelper = (children, origMatchers, secondaryMatchers, matchSet) ->
   allMatchers = uniquifyMatchers origMatchers.concat(secondaryMatchers)
   immediateMatchers = []        # matchers used for immediate siblings (css: +)
   for child, index in children
-    # FIXME: make .css(), .xpath() support refersToRoot
-    # refersToRoot should be supported by client for performance
-    # filter out absolute paths
-    newOrigMatchers = origMatchers
-      # FIXME: do this
-      # if node.isRoot() then origMatchers.filter (m) -> not m.refersToRoot
-      # else origMatchers
+    # refersToRoot should be supported by client for performance;
+    # it filters out absolute paths
+    newOrigMatchers =
+      if child.isRoot then origMatchers.filter (m) -> not m.refersToRoot
+      else origMatchers
     newSecondaryMatchers = []
     newImmediateMatchers = []   # swap with immediateMatchers
     for matcher in allMatchers.concat immediateMatchers

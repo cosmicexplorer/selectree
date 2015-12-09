@@ -55,8 +55,6 @@ class SelecTree
       StringOrFunOptions @obj, @opts, 'id'
     else @attributes().id
 
-  isRoot: -> @isRoot
-
   # could use generators here, but things like :nth-last-child() require full
   # enumeration anyway, and most children can fit in memory anyway. streaming
   # trees is a different problem.
@@ -108,7 +106,7 @@ class SelecTree
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
-# TODO: add tests for fromParents
+# TODO: add tests for fromParents, document the need for a 'parent' field opt
 fromParents = (nodesWithParents, opts = {}) ->
   throw new Error "must provide parent field in opts" unless opts.parent?
   objAndParent = nodesWithParents.map (obj) ->
