@@ -80,34 +80,38 @@ pseudoClass = (pclass) ->
 negationPseudoClass = (matcher) -> (args...) -> not matcher args...
 
 functionalPseudoClassMap =
-  'nth-child': (children, index, recognizer) -> recognizer index
+  # +1 is because indexing is 1-based
+  'nth-child': (children, index, recognizer) -> recognizer(index + 1)
   'nth-last-child': (children, index, recognizer) ->
     recognizer(children.length - index)
+  # +1 is because indexing is 1-based
   'nth-of-type': (children, index, recognizer) ->
     current = children[index]
     type = current.name()
-    index = 0
+    ind = 0
     for child, i in children.filter((c) -> c.name() is type)
       if child is current
-        index = i
+        ind = i
         break
-    recognizer index
+    recognizer(ind + 1)
   'nth-last-of-type': (children, index, recognizer) ->
     current = children[index]
     type = current.name()
     filtered = children.filter (c) -> c.name() is type
-    index = filtered.length - 1
+    ind = filtered.length - 1
     for child, i in filtered
       if child is current
-        index = i
+        ind = i
         break
-    recognizer(filtered.length - index)
+    recognizer(filtered.length - ind)
 
 parseA_N_Plus_BExpr = (expr) ->
-  multipleMatch = expr.match(/^((?:\-|\+)?[0-9]+)N/i)?[1]
-  multiple = if multipleMatch? then parseInt multipleMatch else 1
-  offsetMatch = expr.match(/(?:\-|\+)([0-9]+)$/)?[1]
-  offset = if offsetMatch? then parseInt offsetMatch else 0
+  multipleMatch = expr.match(/^((?:\-|\+)?[0-9]*)N/i)?[1]
+  multiple = if multipleMatch then parseInt multipleMatch else 1
+  offsetMatch = expr.match(/((?:\-|\+)?[0-9]+)$/)?[1]
+  offset = if offsetMatch then parseInt offsetMatch else 0
+  unless multipleMatch? or offsetMatch?
+    throw new Error "empty aN+b expression #{expr}"
   (num) ->
     res = num - offset
     if res < 0 then no else res % multiple == 0
@@ -140,10 +144,9 @@ descendant = (matcher1, matcher2) ->
     if matcher1 children, index
       respawnMatcher2 = (children, index) ->
         res = matcher2 children, index
-        # even if matched, still respawn self
         switch res
           when no then respawnMatcher2
-          else [res, respawnMatcher2]
+          else _.flatten [res, respawnMatcher2]
       respawnMatcher2.matcherId = matcherId
       respawnMatcher2
     else no

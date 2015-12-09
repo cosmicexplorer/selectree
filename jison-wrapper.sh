@@ -8,7 +8,8 @@ lex=$3
 jison=$4
 echo "$jison" -t "$grammar" "$lex" -o "$outfile"
 res=$("$jison" -t "$grammar" "$lex" -o "$outfile")
-if [ "$res" = "" ]; then
+code=$?
+if [ "$res" = "" ] && [ "$code" = "0" ]; then
   exit 0
 else
   # rm "$outfile"

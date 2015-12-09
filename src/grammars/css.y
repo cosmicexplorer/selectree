@@ -107,7 +107,7 @@ attrib
   ;
 
 id_or_pseudofun
-  : IDENT
+  : IDENT -> m.pseudoClass($2)
   | functional_pseudo
   ;
 
@@ -116,7 +116,7 @@ pseudo
   /* Exceptions: :first-line, :first-letter, :before and :after. */
   /* Note that pseudo-elements are restricted to one per selector and */
   /* occur only in the last simple_selector_sequence. */
-  : ':' id_or_pseudofun -> m.pseudoClass($2)
+  : ':' id_or_pseudofun -> $2
   | ':' ':' id_or_pseudofun -> m.pseudoElement($3)
   ;
 
@@ -138,8 +138,14 @@ expression
   | E V E N -> m.parseEvenExpr()
   ;
 
+plus_minus: '-' | '+';
+
 a_n_plus_b
-  : ('-'|'+')? INTEGER? N (('-'|'+') INTEGER)?
+  : plus_minus INTEGER N plus_minus INTEGER
+  | INTEGER N plus_minus INTEGER
+  | N plus_minus INTEGER
+  | plus_minus INTEGER
+  | INTEGER
   ;
 
 negation

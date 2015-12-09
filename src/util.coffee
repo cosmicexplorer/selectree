@@ -1,7 +1,19 @@
-isString = (obj) -> obj instanceof String or typeof obj is 'string'
-isFunction = (obj) -> obj instanceof Function
-isArray = (obj) -> obj instanceof Array
-isObject = (obj) -> obj instanceof Object
+types = ['Boolean', 'Number', 'String', 'Function', 'Array', 'Date', 'RegExp',
+  'Undefined', 'Null']
+
+type = do ->
+  classToType = {}
+  for name in types
+    classToType["[object " + name + "]"] = name.toLowerCase()
+
+  (obj) ->
+    strType = Object::toString.call(obj)
+    classToType[strType] or "object"
+
+isString = (obj) -> 'string' is type obj
+isFunction = (obj) -> 'function' is type obj
+isArray = (obj) -> 'array' is type obj
+isObject = (obj) -> 'object' is type obj
 
 class InternalError extends Error
   constructor: (msg) ->
@@ -17,6 +29,7 @@ addProp = (obj, prop, valOrCondition = yes) ->
   obj
 
 module.exports = {
+  type
   isString
   isFunction
   isArray
