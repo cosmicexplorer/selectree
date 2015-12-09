@@ -3,6 +3,7 @@
 %ebnf
 %start selectors_group
 
+/* https://github.com/zaach/jison/issues/313 */
 %{
 var Jison = require('jison');
 var m = require('./css-matchers');
