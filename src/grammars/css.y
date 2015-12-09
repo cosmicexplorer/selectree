@@ -14,7 +14,11 @@ selectors_group
   : selector comma_space_selector*
       {return [$1].concat($2);}
   | error
-      {return 'ERR: ' + $1;}
+      {
+        // consider more in-depth error handling
+        var msg = "invalid selector: '" + $1 + "'";
+        throw new Error(msg);
+      }
   ;
 
 comma_space_selector
