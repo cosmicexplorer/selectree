@@ -14,5 +14,5 @@ module.exports =
     # TODO: de-dup results, using bloom filters or weak maps or just maps
     gen = match selectree(obj), parseCSS('k b a, a')
     res = Array.from(gen).map (node) -> node.content()
-    test.deepEqual res, [4, 4, 2], 'oops!'
+    test.deepEqual res, [4, 2], 'oops!'
     test.done()

@@ -44,9 +44,11 @@ uniquifyMatchers = (matchers) ->
       matcher
 
 # node is a SelecTree node, matchers are functions as described above
-match = (node, matchers) -> matchHelper [node], matchers, []
+match = (node, matchers) -> matchHelper [node], matchers, [], new WeakSet
 
-matchHelper = (children, origMatchers, secondaryMatchers) ->
+# matchSet is a WeakSet used to de-duplicate node results
+# WeakSet is used to make movement to limited-memory streaming of trees easier
+matchHelper = (children, origMatchers, secondaryMatchers, matchSet) ->
   allMatchers = uniquifyMatchers origMatchers.concat(secondaryMatchers)
   immediateMatchers = []        # matchers used for immediate siblings (css: +)
   for child, index in children
@@ -64,7 +66,10 @@ matchHelper = (children, origMatchers, secondaryMatchers) ->
       res = if matchResult instanceof Array then matchResult else [matchResult]
       for matchRes in res
         switch matchRes
-          when yes then yield child
+          when yes
+            if not matchSet.has child
+              matchSet.add child
+              yield child
           when no
           else
             arrayToPush =
@@ -75,7 +80,7 @@ matchHelper = (children, origMatchers, secondaryMatchers) ->
     immediateMatchers = newImmediateMatchers # swap
     # depth-first search
     childResults = matchHelper child.children(), newOrigMatchers,
-      newSecondaryMatchers
+      newSecondaryMatchers, matchSet
     yield from childResults
   return
 
