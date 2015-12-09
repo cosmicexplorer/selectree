@@ -37,10 +37,20 @@ class SelecTree
       else if util.isObject obj then objFun? obj, opts
       else valueFun? obj, opts
 
-  constructor: (@obj, @opts, @isRoot = no) ->
+  cloneOpts: -> Object.create @origOpts
+
+  constructor: (@obj, @opts, parent = null) ->
     @constructor.ValidateArgs @opts
     # TODO: add test for @cachedChildren; ensure they're actually cached
     @cachedChildren = null
+    # clone opts from original prototype only (root's prototype). don't keep
+    # prototype to every parent (memory leak)
+    if parent?
+      @isRoot = no
+      @origOpts = parent.opts
+    else
+      @isRoot = yes
+      @origOpts = @opts
 
   name: -> if @opts.xml then StringOrFunOptions @obj, @opts, 'name'
   else @opts.name
@@ -61,13 +71,13 @@ class SelecTree
   @GetArrayChildren: (thisObj, opts) =>
     obj = thisObj.obj
     obj.map (o, ind) =>
-      newOpts = Object.create opts
+      newOpts = thisObj.cloneOpts()
       newOpts.name = ind.toString()
       new SelecTree o, newOpts, thisObj
   @GetObjectChildren: (thisObj, opts) =>
     obj = thisObj.obj
     for k, v of obj
-      newOpts = Object.create opts
+      newOpts = thisObj.cloneOpts()
       newOpts.name = k
       new SelecTree v, newOpts, thisObj
   @GetEmptyChild: -> []
@@ -80,7 +90,7 @@ class SelecTree
         if @opts.children?
           childrenArr = StringOrFunOptions @obj, @opts, 'children'
           if childrenArr instanceof Array
-            childrenArr.map (o) => new SelecTree o, Object.create(@opts), @
+            childrenArr.map (o) => new SelecTree o, @cloneOpts(), @
           else throw new Error "children not an array!"
         else
           @constructor.EachCaseOfOpts @, @opts,
@@ -125,7 +135,7 @@ fromParents = (nodesWithParents, opts = {}) ->
       else parentObjs.set parent, [node]
   finalOpts = Object.create opts
   finalOpts.children = (node) -> parentObjs.get node
-  new SelecTree root, finalOpts, yes
+  new SelecTree root, finalOpts
 
 # massage input a bit
 selectree = (obj, opts = {}) ->
@@ -133,7 +143,7 @@ selectree = (obj, opts = {}) ->
   # css selectors, and / in XPath
   # making the name blank makes it unselectable by tag name
   opts.name = '' unless opts.xml or opts.name?
-  new SelecTree obj, opts, yes
+  new SelecTree obj, opts
 
 # attach class as property on function
 selectree.SelecTree = SelecTree
