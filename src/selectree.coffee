@@ -8,30 +8,27 @@ ParseXPath = require './xpath'
 # utility function
 StringOrFunOptions = (obj, opts, field) ->
   strOrFun = opts[field]
+  return null unless strOrFun?
   noCall = opts.dontFlattenFunctions
   res = switch
     when util.isString strOrFun then obj[strOrFun]
     when util.isFunction strOrFun then strOrFun obj
-    else throw new Error "option not string nor function!"
+    else throw new Error "option #{field} not string nor function!"
   if not noCall and util.isFunction res then res() else res
 
 class SelecTree
   # TODO: test class, id
-  @OptionalParams: ['xml', 'dontFlattenFunctions', 'class', 'id']
-  @Params: ['name', 'children', 'attributes', 'content']
-
-  # some form of basic integrity checking, could be improved
-  AllParams = @OptionalParams.concat(@Params)
-  if AllParams.length > _.uniq(AllParams).length
-    throw new util.InternalError "overlapping parameter fields"
+  # optional params: 'xml', 'dontFlattenFunctions', 'class', 'id', 'attributes',
+  # 'content'
+  # required params for all: 'name'
+  # required params for xml: 'children'
 
   @ValidateArgs: (opts) ->
     if not opts? then throw new Error "no traversal options given!"
-    else if opts.xml?
-      if (not @Params.every (p) -> opts[p]?)
-        throw new Error "not all traversal options [#{@Params.join ','}] given!"
     else if not opts.name?
-      throw new Error "no 'name' parameter given for json object!"
+      throw new Error "no 'name' parameter given for object!"
+    else if opts.xml and not opts.children?
+      throw new Error "no children option given!"
 
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
     if opts.xml or opts.children? then xmlFun? obj, opts
@@ -94,24 +91,24 @@ class SelecTree
             @constructor.GetEmptyChild
     @cachedChildren
 
-  @GetEmptyContent: -> null
+  @GetDefaultContent: (obj, opts) ->
+    StringOrFunOptions(obj, opts, 'content') ? null
   content: ->
     @constructor.EachCaseOfOpts @obj, @opts,
-      @constructor.GetEmptyContent,
-      @constructor.GetEmptyContent,
+      @constructor.GetDefaultContent,
+      @constructor.GetDefaultContent,
       (=> @obj),
-      ((obj, opts) => StringOrFunOptions obj, opts, 'content')
+      @constructor.GetDefaultContent
 
   attributes: ->
     if @opts.xml or @opts.attributes?
-      res = StringOrFunOptions @obj, @opts, 'attributes'
-      if res? then res else {}
+      StringOrFunOptions(@obj, @opts, 'attributes') ? {}
     else @obj
 
   css: (sel) -> new SelectStream @, sel, ParseCSS
   xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
-# TODO: add tests for this
+# TODO: add tests for fromParents
 fromParents = (nodesWithParents, opts = {}) ->
   throw new Error "must provide parent field in opts" unless opts.parent?
   objAndParent = nodesWithParents.map (obj) ->
@@ -128,8 +125,6 @@ fromParents = (nodesWithParents, opts = {}) ->
       prevParent = parentObjs.get parent
       if prevParent? then prevParent.push node
       else parentObjs.set parent, [node]
-  # FIXME: make CloneOpts return prototypally-inherited version so changes in
-  # opts change finalOpts too (in the fields that are the same)
   finalOpts = Object.create opts
   finalOpts.children = (node) -> parentObjs.get node
   new SelecTree root, finalOpts, yes
