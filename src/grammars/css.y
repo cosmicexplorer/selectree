@@ -66,9 +66,13 @@ simple_selector_sequence
   | simple_selector_endseq+ -> m.combineSimpleSelectorSequence($1)
   ;
 
-/* TODO: add numerical element names */
 element_name
   : IDENT -> m.element($1)
+  /* N.B.: allowing integers is NOT allowed in standard css3! this is done so
+     that selection over javascript arrays is easier, allowing use of the "0",
+     "1", etc. selectors instead of the 1-based indexing through :nth-child()
+     and friends */
+  | INTEGER -> m.element($1)
   ;
 
 universal
