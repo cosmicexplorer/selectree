@@ -14,6 +14,7 @@ module.exports =
     aTree = selectree(obj).children()[0].children()[0].children()[0]
     # console.error aTree
     # console.error aTree.children()[0]
+    # TODO: make this selector work!
     gen = match selectree(obj), parseCSS('a > :nth-child(1), a')
     res = Array.from(gen)
     console.error res

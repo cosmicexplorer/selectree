@@ -66,6 +66,7 @@ simple_selector_sequence
   | simple_selector_endseq+ -> m.combineSimpleSelectorSequence($1)
   ;
 
+/* TODO: add numerical element names */
 element_name
   : IDENT -> m.element($1)
   ;
