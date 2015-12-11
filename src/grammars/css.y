@@ -143,14 +143,16 @@ expression
   | E V E N -> m.parseEvenExpr()
   ;
 
-plus_minus: '-' | '+';
+plus_minus: '-' | PLUS;
 
 a_n_plus_b
-  : plus_minus INTEGER N plus_minus INTEGER
-  | INTEGER N plus_minus INTEGER
-  | N plus_minus INTEGER
-  | plus_minus INTEGER
-  | INTEGER
+  : plus_minus INTEGER N plus_minus INTEGER -> $1 + $2 + $3 + $4 + $5
+  /* this is stupid. 'n-b' is lexed as an identifier */
+  | plus_minus INTEGER IDENT -> $1 + $2 + $3
+  | INTEGER N plus_minus INTEGER -> $1 + $2 + $3 + $4
+  | N plus_minus INTEGER -> $1 + $2 + $3
+  | plus_minus INTEGER -> $1 + $2
+  | INTEGER -> $1
   ;
 
 negation
