@@ -9,9 +9,10 @@ module.exports =
       k:
         b:
           a: [null, 4]
-        c: '3'
+        c: '3'       # TODO: figure out why this line causes infinite recursion?
       l: 57
       a: 2
-    gen = match selectree(obj), parseCSS('k')
+    # TODO: figure out why this selector doesn't work!
+    gen = match selectree(obj), parseCSS('k b a > *')
     test.deepEqual Array.from(gen).map((node) -> node.content()), [4, 2]
     test.done()
