@@ -13,7 +13,7 @@ parent.children()[childIndex] to get the current node, but some matchers
 then recursively called on all children of all children, etc, in a depth-first
 search.
 
-ALL MATCHERS THAT REFERENCE ROOT SHOULD HAVE THE .refersToRoot PROPERTY SET
+ALL MATCHERS THAT REFERENCE ROOT SHOULD HAVE THE .absolutePath PROPERTY SET
 TRUTHY FOR PERFORMANCE.
 
 when a matcher returns another matcher (intermediate state), that new matcher is
@@ -52,10 +52,10 @@ matchHelper = (children, origMatchers, secondaryMatchers, matchSet) ->
   allMatchers = uniquifyMatchers origMatchers.concat(secondaryMatchers)
   immediateMatchers = []        # matchers used for immediate siblings (css: +)
   for child, index in children
-    # refersToRoot should be supported by client for performance;
+    # absolutePath should be supported by client for performance;
     # it filters out absolute paths
     newOrigMatchers =
-      if child.isRoot then origMatchers.filter (m) -> not m.refersToRoot
+      if child.isRoot then origMatchers.filter (m) -> not m.absolutePath
       else origMatchers
     newSecondaryMatchers = []
     newImmediateMatchers = []   # swap with immediateMatchers

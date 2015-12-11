@@ -44,11 +44,11 @@ classSelector = (classSel) -> getChildIndexMacro (child) ->
   attributeMatchMap['~='] child.class(), _.escapeRegExp classSel
 
 pseudoClassMap =
-  # refersToRoot is used in ../tree-walkers.coffee to optimize out matchers
+  # absolutePath is used in ../tree-walkers.coffee to optimize out matchers
   # which refer to the root node once they fail
   'root': do ->
     res = getChildIndexMacro (child) -> child.isRoot
-    util.addProp res, 'refersToRoot'
+    util.addProp res, 'absolutePath'
   'first-child': (children, index) -> index is 0
   'last-child': (children, index) -> index is children.length - 1
   'first-of-type': (children, index) ->
@@ -135,12 +135,12 @@ pseudoElement = (el) ->
   throw new Error "pseudo-elements (#{el}) are not supported"
 
 combineSimpleSelectorSequence = (matchers) ->
-  matcherRefersToRoot = matchers.some (m) -> m.refersToRoot
+  matcherIsAbsolute = matchers.some (m) -> m.absolutePath
   outMatcher = (children, index) ->
     for matcher in matchers
       return no unless matcher children, index
     yes
-  util.addProp outMatcher, 'refersToRoot', -> matcherRefersToRoot
+  util.addProp outMatcher, 'absolutePath', -> matcherIsAbsolute
 
 # combinators
 descendant = (matcher1, matcher2) ->
@@ -182,8 +182,8 @@ combinatorMap =
 doCombination = (simpleSeq, combinatorsArr) ->
   reducer = (matcher, combinatorObj) ->
     res = combinatorMap[combinatorObj.combinator] matcher, combinatorObj.seq
-    util.addProp res, 'refersToRoot', ->
-      matcher.refersToRoot or combinatorObj.seq.refersToRoot
+    util.addProp res, 'absolutePath', ->
+      matcher.absolutePath or combinatorObj.seq.absolutePath
   combinatorsArr.reduce reducer, simpleSeq
 
 module.exports = {
