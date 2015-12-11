@@ -2,6 +2,9 @@
 {match} = require '../src/tree-walker'
 selectree = require '../src/selectree'
 
+# FIXME: allow selecting on the type of json object
+# add as attribute on selectree object: [type="array"] maybe?
+
 module.exports =
   'parseSomething': (test) ->
     test.expect 1
