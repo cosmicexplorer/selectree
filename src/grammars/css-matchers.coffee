@@ -8,34 +8,44 @@ util = require '../util'
 # turns functions of type (child) -> to type (children, index) ->
 getChildIndexMacro = (f) -> (children, index) -> f children[index]
 # tag names
-element = (str) ->
-  getChildIndexMacro switch str
-    when '*' then (child) -> yes
-    else (child) -> child.name() is str
+element = (str) -> getChildIndexMacro switch str
+  when '*' then (child) -> yes
+  else (child) -> child.name() is str
 
 # turns functions of type (attr) -> to type (child) ->
-getAttributeMacro = (ident, f) -> (child) -> f child.attributes()[ident]
+getAttributeMacro = (ident, f) -> (child) ->
+  f child.attributes()[ident]?.toString()
 attributeExists = (ident) ->
   getChildIndexMacro getAttributeMacro ident, (attr) -> attr?
 
 attributeEqualMap =
-  '=': (attr, idOrString) -> attr is idOrString
-  '*=': (attr, idOrString) -> attr?.indexOf(idOrString) isnt -1
+  '=': (attr, idOrString, caseFold) ->
+    if caseFold then attr.toLowerCase() is idOrString.toLowerCase()
+    else attr is idOrString
+  '*=': (attr, idOrString, caseFold) ->
+    if caseFold
+      attr.toLowerCase().indexOf(idOrString.toLowerCase()) isnt -1
+    else attr.indexOf(idOrString) isnt -1
 attributeMatchMap =
-  '~=': (attr, escapedId) -> attr?.match?(new RegExp "\\s#{escapedId}\\s", "g")?
-  '^=': (attr, escapedId) -> attr?.match?(new RegExp "^#{escapedId}", "g")?
-  '$=': (attr, escapedId) -> attr?.match?(new RegExp "#{escapedId}$", "g")?
-  '|=': (attr, escapedId) ->
-    attr?.match?(new RegExp "^#{escapedId}(\\-)?$", "g")?
+  '~=': (attr, escapedId, flags) ->
+    attr.match(new RegExp "\\s#{escapedId}\\s", flags)?
+  '^=': (attr, escapedId, flags) ->
+    attr.match(new RegExp "^#{escapedId}", flags)?
+  '$=': (attr, escapedId, flags) ->
+    attr.match(new RegExp "#{escapedId}$", flags)?
+  '|=': (attr, escapedId, flags) ->
+    attr.match(new RegExp "^#{escapedId}(\\-)?$", flags)?
 
 # TODO: allow case-sensitive option during parse creation
-attributeMatch = (ident, attribMatch, idOrString) ->
+attributeMatch = (ident, attribMatch, caseInsensitive, idOrString) ->
+  caseFold = caseInsensitive isnt ''
   escapedId = _.escapeRegExp idOrString
   equalAttrib = attributeEqualMap[attribMatch]
   matchAttrib = attributeMatchMap[attribMatch]
+  flags = if caseFold then "g" else "gi"
   getChildIndexMacro getAttributeMacro ident,
-    if equalAttrib? then (attr) -> equalAttrib attr, idOrString
-    else if matchAttrib? then (attr) -> matchAttrib attr, escapedId
+    if equalAttrib? then (attr) -> equalAttrib attr, idOrString, caseFold
+    else if matchAttrib? then (attr) -> matchAttrib attr, escapedId, flags
     else throw new util.InternalError "unrecognized attribute matcher
       #{attribMatch}"
 

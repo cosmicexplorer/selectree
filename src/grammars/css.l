@@ -33,6 +33,7 @@ V         "v"|\\0{0,4}("58"|"78")(\r\n|[ \t\r\n\f])?|"\\v"
 "^="             return 'PREFIXMATCH'
 "$="             return 'SUFFIXMATCH'
 "*="             return 'SUBSTRINGMATCH'
+"i:"             return 'CASEINSENSITIVEFLAG'
 {O}              return 'O'
 {D}              return 'D'
 {E}              return 'E'

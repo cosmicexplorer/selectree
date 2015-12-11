@@ -107,8 +107,8 @@ attrib_end
 
 attrib
   : attrib_start attrib_end -> m.attributeExists($1)
-  | attrib_start attrib_match S* id_or_string S* attrib_end
-      {$$ = m.attributeMatch($1, $2, $4);}
+  | attrib_start attrib_match CASEINSENSITIVEFLAG? S* id_or_string S* attrib_end
+    {$$ = m.attributeMatch($1, $2, $3, $5);}
   ;
 
 id_or_pseudofun

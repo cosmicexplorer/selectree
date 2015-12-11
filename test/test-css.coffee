@@ -12,6 +12,6 @@ module.exports =
         c: '3'
       l: 57
       a: 2
-    gen = match selectree(obj), parseCSS('a > 1, :root > a')
+    gen = match selectree(obj), parseCSS('k')
     test.deepEqual Array.from(gen).map((node) -> node.content()), [4, 2]
     test.done()
