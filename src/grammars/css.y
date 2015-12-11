@@ -147,7 +147,8 @@ plus_minus: '-' | PLUS;
 
 a_n_plus_b
   : plus_minus INTEGER N plus_minus INTEGER -> $1 + $2 + $3 + $4 + $5
-  /* this is stupid. 'n-b' is lexed as an identifier */
+  /* this is stupid. 'n-b' is lexed as an identifier, even when b is a
+     number. we take care of non-integer b in parseA_N_Plus_BExpr() */
   | plus_minus INTEGER IDENT -> $1 + $2 + $3
   | INTEGER N plus_minus INTEGER -> $1 + $2 + $3 + $4
   | N plus_minus INTEGER -> $1 + $2 + $3
