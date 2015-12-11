@@ -41,7 +41,6 @@ class SelecTree
 
   constructor: (@obj, @opts, parent = null) ->
     @constructor.ValidateArgs @opts
-    # TODO: add test for @cachedChildren; ensure they're actually cached
     @cachedChildren = null
     # clone opts from original prototype only (root's prototype). don't keep
     # prototype to every parent (memory leak)

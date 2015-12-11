@@ -9,9 +9,9 @@ module.exports =
       k:
         b:
           a: [null, 4]
+        c: '3'
       l: 57
       a: 2
-    # TODO: make this selector work!
     gen = match selectree(obj), parseCSS('a > 1, :root > a')
     test.deepEqual Array.from(gen).map((node) -> node.content()), [4, 2]
     test.done()

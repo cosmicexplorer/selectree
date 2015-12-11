@@ -1,4 +1,5 @@
-{SelecTree} = require '../src/selectree'
+selectree = require '../src/selectree'
+{SelecTree} = selectree
 
 module.exports =
   'construction': (test) ->
@@ -177,5 +178,13 @@ module.exports =
     normalAttrsTree = new SelecTree normalAttrs, opts
     test.deepEqual normalAttrsTree.attributes(), testKVPairs,
       "invalid normal attributes"
+    test.done()
 
+  'cachedChildren': (test) ->
+    test.expect 2
+    testObj = a: [2, 3]
+    tree = selectree(testObj)
+    test.strictEqual tree.cachedChildren, null
+    children = tree.children()
+    test.strictEqual tree.children(), children
     test.done()
