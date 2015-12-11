@@ -112,7 +112,7 @@ attrib
   ;
 
 id_or_pseudofun
-  : IDENT -> m.pseudoClass($2)
+  : IDENT -> m.pseudoClass($1)
   | functional_pseudo
   ;
 
