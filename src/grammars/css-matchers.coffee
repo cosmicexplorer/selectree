@@ -117,22 +117,34 @@ functionalPseudoClassMap =
 
 parseA_N_Plus_BExpr = (expr) ->
   multipleMatch = expr.match(/^((?:\-|\+)?[0-9]*)N/i)?[1]
+  multipleMatch = switch multipleMatch
+    when '-' then '-1'
+    when '' then '1'
+    else multipleMatch
   multiple = if multipleMatch then parseInt multipleMatch else null
+  console.log "multiple: #{multiple}"
   offsetMatch = expr.match(/((?:\-|\+)?[0-9]+)$/)?[1]
   offset = if offsetMatch then parseInt offsetMatch else 0
+  console.log "offset: #{offset}"
   unless multipleMatch? or offsetMatch?
     throw new Error "empty aN+b expression #{expr}"
   unless multipleMatch? or (offset != 0)
     throw new Error "nth-* indices start at 1"
   if multiple?
-    (num) ->
-      res = num - offset
-      console.log "res: #{res}"
-      if res < 0 then no else res % multiple == 0
+    if multiple > 0
+      (num) ->
+        res = num - offset
+        if res < 0 then no
+        else res % multiple is 0
+    else
+      (num) ->
+        res = num - offset
+        if res > 0 then no
+        else -(res) % (-multiple) is 0
   else (num) -> num is offset
 
-parseOddExpr = -> (num) -> num % 2 == 1
-parseEvenExpr = -> (num) -> num % 2 == 0
+parseOddExpr = -> (num) -> num % 2 is 1
+parseEvenExpr = -> (num) -> num % 2 is 0
 
 parseFunctionalPseudoClass = (pclass) -> pclass[..-2]
 

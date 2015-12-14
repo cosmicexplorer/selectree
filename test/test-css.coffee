@@ -11,7 +11,7 @@ module.exports =
     obj =
       k:
         b:
-          a: [null, 4]
+          a: [53, 4]
         c: '3'       # TODO: figure out why this line causes infinite recursion?
       l: 57
       a: 2
