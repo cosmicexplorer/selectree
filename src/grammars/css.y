@@ -66,6 +66,10 @@ simple_selector_sequence
   | simple_selector_endseq+ -> m.combineSimpleSelectorSequence($1)
   ;
 
+/* TODO: also allow multiple different options of tag type, maybe with a
+   pipe character? this could probably be done with arbitrary elements of a
+   simple_selector_sequence, too, even without parens (but parens would make it
+   easier) */
 element_name
   : IDENT -> m.element($1)
   /* N.B.: allowing integers is NOT allowed in standard css3! this is done so
