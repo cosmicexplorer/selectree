@@ -10,11 +10,11 @@ StringOrFunOptions = (obj, opts, field) ->
   strOrFun = opts[field]
   return null unless strOrFun?
   noCall = opts.dontFlattenFunctions
-  res = switch
-    when util.isString strOrFun then obj[strOrFun]
-    when util.isFunction strOrFun then strOrFun obj
-    else throw new Error "option #{field} not string nor function!"
-  if not noCall and util.isFunction res then res() else res
+  if util.isString strOrFun
+    if not noCall and util.isFunction obj[strOrFun] then obj[strOrFun]()
+    else obj[strOrFun]
+  else if util.isFunction strOrFun then strOrFun obj
+  else throw new Error "option #{field} not string nor function!"
 
 class SelecTree
   # TODO: test class, id
