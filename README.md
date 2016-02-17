@@ -14,7 +14,7 @@ selectree(treeLikeObject).css('field1 > field2[attribute="value"]', function(nod
 
 If no options argument given, assume object is a normal javascript object (JSON-like) and select on that (no "attributes" allowed, just children and node names). Returns node stream (available through browserify!) from `.css()` and `.xpath()` calls.
 
-Unless `json` in options is truthy:
+If `xml` in options is truthy:
 - Need `name` field for selection.
 - If `attribute` field given, then selectree will check that field for any attributes at the current node (the `attributes` field should be an associative object).
 - If `children` is given, then selectree will check that attribute to get child nodes of the current node.

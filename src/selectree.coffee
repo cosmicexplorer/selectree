@@ -1,9 +1,9 @@
 stream = require 'stream'
 _ = require 'lodash'
 util = require './util'
-ParseCSS = require('./grammars/css.tab').parse
-ParseXPath = require './xpath'
-{SelectStream} = require './streams'
+{parse: parseCSS} = require './grammars/css.tab'
+# ParseXPath = require './xpath'
+{match} = require './tree-walker'
 
 # utility function
 StringOrFunOptions = (obj, opts, field) ->
@@ -112,8 +112,8 @@ class SelecTree
       StringOrFunOptions(@obj, @opts, 'attributes') ? {}
     else @obj
 
-  css: (sel) -> new SelectStream @, sel, ParseCSS
-  xpath: (sel) -> new SelectStream @, sel, ParseXPath
+  css: (sel) -> match @, parseCSS(sel)
+  # xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
 # TODO: add tests for fromParents, document the need for a 'parent' field opt
 fromParents = (nodesWithParents, opts = {}) ->
