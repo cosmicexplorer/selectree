@@ -115,6 +115,8 @@ class SelecTree
   css: (sel) -> match @, parseCSS(sel)
   # xpath: (sel) -> new SelectStream @, sel, ParseXPath
 
+  get: -> @obj
+
 # TODO: add tests for fromParents, document the need for a 'parent' field opt
 fromParents = (nodesWithParents, opts = {}) ->
   throw new Error "must provide parent field in opts" unless opts.parent?
