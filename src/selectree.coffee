@@ -10,10 +10,12 @@ StringOrFunOptions = (obj, opts, field) ->
   strOrFun = opts[field]
   return null unless strOrFun?
   noCall = opts.dontFlattenFunctions
-  if util.isString strOrFun
-    if not noCall and util.isFunction obj[strOrFun] then obj[strOrFun]()
+  if _.isString strOrFun
+    if not noCall and _.isFunction obj[strOrFun] then obj[strOrFun]()
     else obj[strOrFun]
-  else if util.isFunction strOrFun then strOrFun obj
+  else if _.isFunction strOrFun
+    res = strOrFun obj
+    if not noCall and _.isFunction res then res() else res
   else throw new Error "option #{field} not string nor function!"
 
 class SelecTree
@@ -33,8 +35,8 @@ class SelecTree
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
     if opts.xml or opts.children? then xmlFun? obj, opts
     else
-      if util.isArray obj then arrFun obj, opts
-      else if util.isObject obj then objFun? obj, opts
+      if _.isArray obj then arrFun obj, opts
+      else if _.isObject obj then objFun? obj, opts
       else valueFun? obj, opts
 
   cloneOpts: -> Object.create @origOpts
@@ -98,8 +100,7 @@ class SelecTree
             @constructor.GetEmptyChild
     @cachedChildren
 
-  @GetDefaultContent: (obj, opts) ->
-    StringOrFunOptions(obj, opts, 'content') ? null
+  @GetDefaultContent: (obj, opts) -> StringOrFunOptions(obj, opts, 'content')
   content: ->
     @constructor.EachCaseOfOpts @obj, @opts,
       @constructor.GetDefaultContent,
