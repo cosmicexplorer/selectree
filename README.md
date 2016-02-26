@@ -49,6 +49,8 @@ selectree(treeLikeObj)
 - Make sure to do all readableStream event creation by pushing onto the event queue instead of doing synchronously, otherwise you get a synchronous stream, which is just silly.
 - Along the same lines, consider some sort of modification that allows stream-based input instead of requiring a physical object.
 
+- add graphql?!
+
 # LICENSE
 
 [GPLv3](GPL.md)
