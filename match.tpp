@@ -1,65 +1,107 @@
+#include <algorithm>
+
 namespace selectree
 {
 namespace match
 {
 template <typename T>
-Matcher<T>::Matcher(const Matcher<T>::internal_fun_type & f)
-    : internal_fun(f)
+Iterator<T>::getMatchersForNextStage(FunctionsVector v)
+{
+  return util::filter(v, [](auto el) { return !el.fromRoot });
+}
+
+template <typename T>
+bool Iterator<T>::insertIfUnique(const T & arg)
+{
+  if (ids_seen.find(arg.id()) == ids_seen.end()) {
+    ids_seen.insert(arg.id());
+    cur_results.push(arg);
+    return true;
+  }
+  return false;
+}
+
+template <typename T>
+bool Iterator<T>::incrementIteratorUntilResult() const
+{
+  while (!cur_iterated_results.atEnd()) {
+    auto cur = *(cur_iterated_results++);
+    if (insertIfUnique(cur)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <typename T>
+Iterator<T>::Iterator()
+    : root(boost::none), cur_result(boost::none), orig_matchers(),
+      cur_orig_matcher(), new_matchers(), cur_new_matcher(),
+      cur_iterated_results()
 {
 }
 
 template <typename T>
-Matcher<T>::operator()(T arg)
+Iterator<T>::Iterator(T start, FunctionsVector<T> matchFuns,
+                      FunctionsVector<T> newMatchers,
+                      std::unordered_set<std::string> & have_seen_previously)
+    : root(start), cur_result(boost::none), orig_matchers(matchFuns),
+      cur_orig_matcher(orig_matchers.begin()), new_matchers(newMatchers),
+      cur_new_matcher(new_matchers.begin()), cur_iterated_results(),
+      ids_seen(have_seen_previously)
 {
-  return internal_fun(arg);
 }
 
 template <typename T>
-Iterator<T>::Iterator(T root, FunctionsVector<T> matchFuns)
-    : cur_children(root.children()), cur_results(), matchers(matchFuns)
+bool Iterator<T>::atEnd() const
 {
-}
-
-template <typename T>
-bool Iterator<T>::atEnd()
-{
-  return cur_results.empty() and cur_children.empty() and
-         (!cur_iterated_results or cur_iterated_results.atEnd());
+  return cur_results.empty() and cur_iterated_results.atEnd() and
+         cur_children.empty();
 }
 
 template <typename T>
 Iterator<T> & Iterator<T>::operator++()
 {
-  /* TODO: if we dedup the results here, we can use .id() to check equality of
-     iterators */
+  if (atEnd()) {
+    throw match_iteration_error("iterator is at end of match results!");
+  }
   if (!cur_results.empty()) {
     cur_results.pop();
+    return *this;
+  }
+  if (incrementIteratorUntilResult()) {
+    return *this;
   }
   /* this is the possibly long-blocking part */
   if (!cur_children.empty()) {
     while (cur_results.empty() and !cur_children.empty() and
-           (!cur_iterated_results or cur_iterated_results.atEnd())) {
+           cur_iterated_results.atEnd()) {
       T curChild = cur_children.front();
       cur_children.pop();
       for (auto & matcher : matchers) {
         auto res = matcher(curChild);
         /* add result to cur_results */
         if (res.didCompleteMatch) {
-          cur_results.push_back(curChild);
+          insertIfUnique(curChild);
         }
+        FunctionsVector newMatchers(getMatchersForNextStage(matchers));
         /* see if any intermediate results happen */
-        if (res.newMatch) {
-          FunctionsVector newMatchers(matchers);
+        if (res.newMatcher) {
           newMatchers.push_back(*res);
+        }
+        if (newMatchers.size() > 0) {
           cur_iterated_results = Iterator(curChild, newMatchers);
         }
       }
+      if (incrementIteratorUntilResult()) {
+        return *this;
+      }
     }
   }
-  if (cur_iterated_results and !cur_iterated_results.atEnd()) {
-    return *(cur_iterated_results++);
+  if (incrementIteratorUntilResult()) {
+    return *this;
   }
-  cur_iterated_results = boost::none;
+  return *this;
 }
 
 template <typename T>
@@ -73,7 +115,14 @@ Iterator<T> Iterator<T>::operator++(int)
 template <typename T>
 bool Iterator<T>::operator==(const Iterator<T> & rhs) const
 {
-  return atEnd() and rhs.atEnd();
+  if (atEnd()) {
+    return rhs.atEnd();
+  }
+  if (rhs.atEnd()) { /* this is NOT at end */
+    return false;
+  }
+  /* neither are at end, this means we can safely deref */
+  return (*(*this)).id() == (*rhs).id();
 }
 
 template <typename T>
