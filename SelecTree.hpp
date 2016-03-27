@@ -1,54 +1,26 @@
 #ifndef ___SELECTREE_SELECTREE___
 #define ___SELECTREE_SELECTREE___
 
+#include "match.hpp"
 #include <string>
-#include <queue>
-#include <iterator>
 
 namespace selectree
 {
 /* requires: name -> std::string, children -> iterable<T>,
  * attribute(std::string) -> T, attributeKeys -> iterable<std::string>,
- * value -> std::string */
+ * value -> std::string, (id -> int)? */
 /* value() is used for 'tag[key="value"]' constructions */
-/* universal reference allows us to use references or rvalues and respects
- * constness; if copy ctor deleted, then defaults to T&, for example */
+/* TODO: figure out how to make sure that if a reference is passed in, only
+ * references will be returned in the match::Results, but if children() returns
+ * values and NOT references, that T resolves to a value type. this is so that
+ * in cases where we DON'T want copying (where each node has a reference to
+ * another node internally), it'll return refs and not make copies (whihc would
+ * be useless), but otherwise it'll pull values */
 template <typename T>
-MatchResults<T &> css(T &, std::string);
-template <typename T>
-MatchResults<T> css(T, std::string);
+match::Results<T> css(T, std::string);
 
 template <typename T>
-MatchResults<T &> xpath(T &, std::string);
-template <typename T>
-MatchResults<T> xpath(T, std::string);
-
-template <typename T>
-class MatchIterator : std::iterator<std::input_iterator_tag, T>
-{
-  std::queue<T> cur;
-
-public:
-  MatchIterator();
-  MatchIterator(const MatchIterator &) = delete;
-  MatchIterator & operator++();
-  MatchIterator operator++(int);
-  bool operator==(const MatchIterator &) const;
-  bool operator!=(const MatchIterator &) const;
-  T operator*() const;
-};
-
-/* adapter class for range-based for loop */
-template <typename T>
-class MatchResults
-{
-  MatchIterator<T> internal;
-
-public:
-  MatchResults(const MatchIterator<T> &);
-  MatchIterator<T> begin();
-  MatchIterator<T> end();
-};
+match::Results<T> xpath(T, std::string);
 }
 
 #include "SelecTree.tpp"
