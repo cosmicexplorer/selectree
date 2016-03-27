@@ -1,3 +1,5 @@
+#include <algorithm>
+
 namespace selectree {
 namespace util {
 template <typename Vect, typename Func>

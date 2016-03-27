@@ -1,9 +1,7 @@
 #ifndef ___SELECTREE_MATCH___
 #define ___SELECTREE_MATCH___
 
-#include <tuple>
 #include <boost/optional.hpp>
-#include <functional>
 #include <vector>
 #include <stdexcept>
 #include <unordered_set>
@@ -15,23 +13,23 @@ namespace match
 template <typename T>
 struct Matcher {
   struct return_type {
-    boost::optional<Matcher<T>> newMatcher;
     bool didCompleteMatch;
+    boost::optional<Matcher<T>> newMatcher;
   };
   using internal_fun_type = std::function<return_type(T)>;
-  bool fromRoot;
 
-  Matcher(internal_fun_type, bool = false)
+  Matcher(internal_fun_type f, bool isFromRoot = false)
       : internal_fun(f), fromRoot(isFromRoot)
   {
   }
-  return_type operator()(T arg)
+  return_type operator()(T arg) const
   {
     return internal_fun(arg);
   }
 
 private:
   internal_fun_type internal_fun;
+  const bool fromRoot;
 };
 
 struct match_iteration_error : public std::runtime_error {
@@ -41,60 +39,26 @@ struct match_iteration_error : public std::runtime_error {
 };
 
 template <typename T>
-using FunctionsVector = std::vector<Matcher<T>>;
+using Results = std::vector<T>;
 
-/* implements depth-first lazy search */
+/* note: this strictly evaluates a query; this can block for a while! */
 template <typename T>
-class Iterator : std::iterator<std::input_iterator_tag, T>
-{
-  T root;
-  T cur_result;
+Results<T> match(T, const Matcher<T> &);
 
-  const FunctionsVector orig_matchers;
-  FunctionsVector::iterator cur_orig_matcher;
-  const FunctionsVector new_matchers;
-  FunctionsVector::iterator cur_new_matcher;
-
-  Iterator<T> cur_iterated_results;
-  /* a set of std::string and not of T so that we don't keep them in memory
-   * forever */
-  std::unordered_set<std::string> & ids_seen;
-
-  static FunctionsVector getMatchersForNextStage(FunctionsVector);
-  inline bool insertIfUnique(const T &);
-  inline bool incrementIteratorUntilResult() const;
-
-public:
-  Iterator();
-  Iterator(T, FunctionsVector<T>, const Matcher<T> &,
-           std::unordered_set<std::string> &);
-  inline bool atEnd() const;
-  Iterator<T> & operator++();
-  inline Iterator<T> operator++(int);
-  inline bool operator==(const Iterator<T> &) const;
-  inline bool operator!=(const Iterator<T> &) const;
-  inline T operator*() const;
-};
-
-/* adapter class for range-based for loop */
+/* match is thread-safe; not these! you shouldn't be using these anyway */
 template <typename T>
-class Results
-{
-  Iterator<T> internal;
+void do_match(T &,
+              const Matcher<T> &,
+              const Matcher<T> &,
+              std::unordered_set<std::string> &,
+              Results<T> &);
 
-public:
-  Results(const Iterator<T> & it) : internal(it)
-  {
-  }
-  Iterator<T> begin()
-  {
-    return internal;
-  }
-  Iterator<T> end()
-  {
-    return Iterator<T>();
-  }
-};
+template <typename T>
+void match_recurse(T &,
+                   const Matcher<T> &,
+                   boost::optional<Matcher<T>>,
+                   std::unordered_set<std::string> &,
+                   Results<T> &);
 }
 }
 
