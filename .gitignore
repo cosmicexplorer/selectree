@@ -1,7 +1,2 @@
-*
-!.gitignore
-!*.cpp
-!*.tpp
-!*.hpp
-!.clang-format
-!*.md
+main
+main.o

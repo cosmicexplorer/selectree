@@ -26,6 +26,16 @@ struct TreeLike {
   }
 };
 
+template <typename Vect>
+std::string PrintResults(Vect v)
+{
+  std::string s;
+  for (auto el : v) {
+    s += std::string("[") + el.id() + std::string(",") + el.get_name() + "]\n";
+  }
+  return s;
+}
+
 int main()
 {
   using selectree::match::Matcher;
@@ -37,14 +47,36 @@ int main()
   using tm = Matcher<TreeLike>;
   tm m([](auto el) {
     if (el.get_name() == "a") {
-      return match_ret{false, tm([](auto el) {
+      return match_ret{true, tm([](auto el) {
                          return match_ret{el.get_name() == "c", boost::none};
                        })};
     }
     return match_ret{false, boost::none};
   });
   auto res = match(a, m);
-  for (auto el : res) {
-    std::cout << '[' << el.id() << ',' << el.get_name() << ']' << std::endl;
-  }
+  std::cout << PrintResults(res);
+  tm mAnd = tm([](auto el) {
+              return match_ret{el.get_name() == "b", boost::none};
+            }) &&
+            tm([](auto el) {
+              return match_ret{el.id() == "0", boost::none};
+            });
+  auto resAnd = match(a, mAnd);
+  std::cout << PrintResults(resAnd);
+  tm mOr = tm([](auto el) {
+             return match_ret{el.get_name() == "b", boost::none};
+           }) ||
+           tm([](auto el) {
+             return match_ret{el.get_name() == "c", boost::none};
+           }) ||
+           tm([](auto el) {
+             return match_ret{el.get_name() == "a", boost::none};
+           });
+  auto resOr = match(a, mOr);
+  std::cout << PrintResults(resOr);
+  tm mNot = !tm([](auto el) {
+    return match_ret{el.get_name() == "b", boost::none};
+  });
+  auto resNot = match(a, mNot);
+  std::cout << PrintResults(resNot);
 }

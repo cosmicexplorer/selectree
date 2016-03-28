@@ -14,7 +14,7 @@ namespace selectree
  * references will be returned in the match::Results, but if children() returns
  * values and NOT references, that T resolves to a value type. this is so that
  * in cases where we DON'T want copying (where each node has a reference to
- * another node internally), it'll return refs and not make copies (whihc would
+ * another node internally), it'll return refs and not make copies (which would
  * be useless), but otherwise it'll pull values */
 template <typename T>
 match::Results<T> css(T, std::string);

@@ -1,6 +1,7 @@
 #ifndef ___SELECTREE_MATCH___
 #define ___SELECTREE_MATCH___
 
+#include <boost/variant.hpp>
 #include <boost/optional.hpp>
 #include <vector>
 #include <stdexcept>
@@ -12,24 +13,44 @@ namespace match
 {
 template <typename T>
 struct Matcher {
+  using maybe_match = boost::optional<Matcher<T>>;
   struct return_type {
     bool didCompleteMatch;
-    boost::optional<Matcher<T>> newMatcher;
+    maybe_match newMatcher;
   };
   using internal_fun_type = std::function<return_type(T)>;
 
-  Matcher(internal_fun_type f, bool isFromRoot = false)
-      : internal_fun(f), fromRoot(isFromRoot)
+private:
+  internal_fun_type internal_fun;
+  bool regenerate;
+
+  Matcher<T> setRegenerate(bool) const;
+
+public:
+  /* doRegenerate is false when a matcher references root */
+  Matcher(internal_fun_type f, bool doRegenerate = true)
+      : internal_fun(f), regenerate(doRegenerate)
   {
   }
+
+  /* invoke the lambda that started all this */
   return_type operator()(T arg) const
   {
     return internal_fun(arg);
   }
 
-private:
-  internal_fun_type internal_fun;
-  const bool fromRoot;
+  /* used in match() and friends */
+  static maybe_match recurse_combine_matchers(Matcher<T>, maybe_match);
+
+  /* algebraic operators */
+  Matcher<T> operator||(const Matcher<T> &) const;
+  static maybe_match combineByOr(bool, maybe_match, maybe_match);
+
+  Matcher<T> operator&&(const Matcher<T> &) const;
+  static maybe_match combineByAnd(bool, maybe_match, maybe_match);
+
+  /* for complement */
+  Matcher<T> operator!() const;
 };
 
 struct match_iteration_error : public std::runtime_error {
@@ -45,18 +66,11 @@ using Results = std::vector<T>;
 template <typename T>
 Results<T> match(T, const Matcher<T> &);
 
-/* match is thread-safe; not these! you shouldn't be using these anyway */
-template <typename T>
-void do_match(T &,
-              const Matcher<T> &,
-              const Matcher<T> &,
-              std::unordered_set<std::string> &,
-              Results<T> &);
-
+/* match is thread-safe; not this! you shouldn't be using this anyway */
 template <typename T>
 void match_recurse(T &,
                    const Matcher<T> &,
-                   boost::optional<Matcher<T>>,
+                   typename Matcher<T>::maybe_match,
                    std::unordered_set<std::string> &,
                    Results<T> &);
 }
