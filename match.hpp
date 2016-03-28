@@ -56,14 +56,6 @@ public:
   Matcher<T> operator!() const;
 };
 
-/* template <typename T> */
-/* class Iterator : std::iterator<std::forward_iterator_tag, T> */
-/* { */
-/* }; */
-
-template <typename T>
-using Results = std::vector<T>;
-
 template <typename T>
 struct MatchAndNode {
   Matcher<T> match;
@@ -77,16 +69,50 @@ struct MatchAndNode {
   }
 };
 
-/* note: this strictly evaluates a query; this can block for a while! */
-template <typename T>
-Results<T> match(T, const Matcher<T> &);
+struct match_iteration_error : public std::runtime_error {
+  match_iteration_error(const std::string & s) : std::runtime_error(s)
+  {
+  }
+};
 
 template <typename T>
-void match_helper(T,
-                  const Matcher<T> &,
-                  std::unordered_set<std::string>,
-                  Results<T> &,
-                  std::stack<MatchAndNode<T>> &);
+class Iterator : std::iterator<std::forward_iterator_tag, T>
+{
+  std::unordered_set<std::string> ids_seen;
+  boost::optional<T &> cur_result;
+  std::stack<MatchAndNode<T>> cur_branch;
+
+  void match_helper(T &, const Matcher<T> &);
+  void do_increment();
+
+public:
+  Iterator();
+  Iterator(T &, const Matcher<T> &);
+  Iterator<T> & operator++();
+  Iterator<T> operator++(int);
+  bool operator==(const Iterator<T> &) const;
+  bool operator!=(const Iterator<T> &) const;
+  T & operator*() const;
+  T * operator->() const;
+  bool atEnd() const;
+};
+
+template <typename T>
+struct Results {
+  const Iterator<T> internal;
+  Iterator<T> begin() const
+  {
+    return internal;
+  }
+  Iterator<T> end() const
+  {
+    return Iterator<T>();
+  }
+};
+
+/* note: this strictly evaluates a query; this can block for a while! */
+template <typename T>
+Results<T> match(T &, const Matcher<T> &);
 }
 }
 

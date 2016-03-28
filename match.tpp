@@ -102,46 +102,110 @@ typename Matcher<T>::maybe_match Matcher<T>::recurse_combine_matchers(
 }
 
 template <typename T>
-Results<T> match(T root, const Matcher<T> & matcher)
+Iterator<T>::Iterator()
+    : ids_seen(), cur_result(boost::none), cur_branch()
 {
-  /* keep only the ids in a set, NOT the Ts themselves */
-  /* TODO: is std::string the best data type for unique ids? */
-  std::unordered_set<std::string> ids_seen;
-  Results<T> results;
-  std::stack<MatchAndNode<T>> cur_branch;
-  auto res_root = matcher(root);
-  match_helper(root, matcher, ids_seen, results, cur_branch);
-  while (!cur_branch.empty()) {
+}
+
+template <typename T>
+void Iterator<T>::match_helper(T & node, const Matcher<T> & matcher)
+{
+  auto res = matcher(node);
+  auto id = node.id();
+  if (res.didCompleteMatch and ids_seen.find(id) == ids_seen.end()) {
+    ids_seen.insert(id);
+    cur_result = node;
+  }
+  auto nextMatcher =
+      Matcher<T>::recurse_combine_matchers(matcher, res.newMatcher);
+  if (nextMatcher) {
+    cur_branch.emplace(*nextMatcher, node);
+  }
+}
+
+template <typename T>
+void Iterator<T>::do_increment()
+{
+  while (!cur_branch.empty() && !cur_result) {
     MatchAndNode<T> & cur = cur_branch.top();
     if (cur.curChild == cur.curEnd) {
       cur_branch.pop();
       continue;
     }
-    T node = *cur.curChild;
+    T & node = *cur.curChild;
     ++cur.curChild;
-    auto curMatcher = cur.match;
-    match_helper(node, curMatcher, ids_seen, results, cur_branch);
+    Matcher<T> & curMatcher = cur.match;
+    match_helper(node, curMatcher);
   }
-  return results;
 }
 
 template <typename T>
-void match_helper(T cur,
-                  const Matcher<T> & matcher,
-                  std::unordered_set<std::string> ids_seen,
-                  Results<T> & results,
-                  std::stack<MatchAndNode<T>> & cur_branch)
+Iterator<T>::Iterator(T & root, const Matcher<T> & matcher)
+    : ids_seen(), cur_result(boost::none), cur_branch()
 {
-  auto res = matcher(cur);
-  if (res.didCompleteMatch and ids_seen.find(cur.id()) == ids_seen.end()) {
-    ids_seen.insert(cur.id());
-    results.push_back(cur);
+  match_helper(root, matcher);
+  do_increment();
+}
+
+template <typename T>
+Iterator<T> & Iterator<T>::operator++()
+{
+  if (atEnd()) {
+    throw match_iteration_error("incrementing iterator at end of matches!");
   }
-  auto nextMatcher =
-      Matcher<T>::recurse_combine_matchers(matcher, res.newMatcher);
-  if (nextMatcher) {
-    cur_branch.emplace(*nextMatcher, cur);
+  cur_result = boost::none;
+  do_increment();
+  return *this;
+}
+
+template <typename T>
+Iterator<T> Iterator<T>::operator++(int)
+{
+  Iterator<T> tmp(*this);
+  ++(*this);
+  return tmp;
+}
+
+template <typename T>
+bool Iterator<T>::operator==(const Iterator<T> & rhs) const
+{
+  return (atEnd() and rhs.atEnd()) or ((&cur_result) == (&rhs.cur_result));
+}
+
+template <typename T>
+bool Iterator<T>::operator!=(const Iterator<T> & rhs) const
+{
+  return !((*this) == rhs);
+}
+
+template <typename T>
+T & Iterator<T>::operator*() const
+{
+  if (cur_result) {
+    return *cur_result;
   }
+  throw match_iteration_error("dereferencing iterator at end of matches!");
+}
+
+template <typename T>
+T * Iterator<T>::operator->() const
+{
+  if (cur_result) {
+    return addressof(operator*());
+  }
+  throw match_iteration_error("dereferencing iterator at end of matches!");
+}
+
+template <typename T>
+bool Iterator<T>::atEnd() const
+{
+  return !cur_result;
+}
+
+template <typename T>
+Results<T> match(T & root, const Matcher<T> & matcher)
+{
+  return Results<T>{Iterator<T>(root, matcher)};
 }
 }
 }
