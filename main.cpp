@@ -8,6 +8,7 @@ struct TreeLike {
   int counter;
   std::vector<TreeLike> children_mem;
   std::string name;
+  using iterator = std::vector<TreeLike>::iterator;
   TreeLike(int count, std::vector<TreeLike> children_arg, std::string name_arg)
       : counter(count), children_mem(children_arg), name(name_arg)
   {
@@ -16,9 +17,13 @@ struct TreeLike {
   {
     return std::to_string(counter);
   }
-  std::vector<TreeLike> children() const
+  iterator begin()
   {
-    return children_mem;
+    return children_mem.begin();
+  }
+  iterator end()
+  {
+    return children_mem.end();
   }
   std::string get_name() const
   {

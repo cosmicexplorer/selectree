@@ -1,6 +1,3 @@
-#include <functional>
-#include <stack>
-
 namespace selectree
 {
 namespace match
@@ -111,44 +108,40 @@ Results<T> match(T root, const Matcher<T> & matcher)
   /* TODO: is std::string the best data type for unique ids? */
   std::unordered_set<std::string> ids_seen;
   Results<T> results;
-  struct MatchAndNode {
-    Matcher<T> match;
-    std::vector<T> children;
-    typename std::vector<T>::iterator curChild;
-    MatchAndNode(Matcher<T> matcher, const std::vector<T> & child_v)
-        : match(matcher), children(child_v), curChild(children.begin())
-    {
-    }
-  };
-  std::stack<MatchAndNode> cur_branch;
-  std::vector<T> children{root};
-  cur_branch.emplace(matcher, children);
+  std::stack<MatchAndNode<T>> cur_branch;
+  auto res_root = matcher(root);
+  match_helper(root, matcher, ids_seen, results, cur_branch);
   while (!cur_branch.empty()) {
-    MatchAndNode & cur = cur_branch.top();
-    if (cur.curChild == cur.children.end()) {
+    MatchAndNode<T> & cur = cur_branch.top();
+    if (cur.curChild == cur.curEnd) {
       cur_branch.pop();
       continue;
     }
     T node = *cur.curChild;
     ++cur.curChild;
     auto curMatcher = cur.match;
-    auto res = curMatcher(node);
-    if (res.didCompleteMatch and ids_seen.find(node.id()) == ids_seen.end()) {
-      ids_seen.insert(node.id());
-      results.push_back(node);
-    }
-    auto nextMatcher =
-        Matcher<T>::recurse_combine_matchers(curMatcher, res.newMatcher);
-    if (nextMatcher) {
-      auto children = node.children();
-      auto beg      = children.begin();
-      auto end = children.end();
-      if (beg != end) {
-        cur_branch.emplace(*nextMatcher, children);
-      }
-    }
+    match_helper(node, curMatcher, ids_seen, results, cur_branch);
   }
   return results;
+}
+
+template <typename T>
+void match_helper(T cur,
+                  const Matcher<T> & matcher,
+                  std::unordered_set<std::string> ids_seen,
+                  Results<T> & results,
+                  std::stack<MatchAndNode<T>> & cur_branch)
+{
+  auto res = matcher(cur);
+  if (res.didCompleteMatch and ids_seen.find(cur.id()) == ids_seen.end()) {
+    ids_seen.insert(cur.id());
+    results.push_back(cur);
+  }
+  auto nextMatcher =
+      Matcher<T>::recurse_combine_matchers(matcher, res.newMatcher);
+  if (nextMatcher) {
+    cur_branch.emplace(*nextMatcher, cur);
+  }
 }
 }
 }

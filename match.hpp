@@ -5,6 +5,7 @@
 #include <vector>
 #include <stdexcept>
 #include <unordered_set>
+#include <stack>
 
 namespace selectree
 {
@@ -55,12 +56,37 @@ public:
   Matcher<T> operator!() const;
 };
 
+/* template <typename T> */
+/* class Iterator : std::iterator<std::forward_iterator_tag, T> */
+/* { */
+/* }; */
+
 template <typename T>
 using Results = std::vector<T>;
+
+template <typename T>
+struct MatchAndNode {
+  Matcher<T> match;
+  T parent;
+  typename T::iterator curChild;
+  typename T::iterator curEnd;
+  MatchAndNode(Matcher<T> matcher, T & parent_arg)
+      : match(matcher), parent(parent_arg), curChild(parent.begin()),
+        curEnd(parent.end())
+  {
+  }
+};
 
 /* note: this strictly evaluates a query; this can block for a while! */
 template <typename T>
 Results<T> match(T, const Matcher<T> &);
+
+template <typename T>
+void match_helper(T,
+                  const Matcher<T> &,
+                  std::unordered_set<std::string>,
+                  Results<T> &,
+                  std::stack<MatchAndNode<T>> &);
 }
 }
 
