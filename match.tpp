@@ -1,4 +1,5 @@
 #include <functional>
+#include <stack>
 
 namespace selectree
 {
@@ -104,38 +105,50 @@ typename Matcher<T>::maybe_match Matcher<T>::recurse_combine_matchers(
 }
 
 template <typename T>
-Results<T> match(T root, const Matcher<T> & origMatcher)
+Results<T> match(T root, const Matcher<T> & matcher)
 {
   /* keep only the ids in a set, NOT the Ts themselves */
   /* TODO: is std::string the best data type for unique ids? */
   std::unordered_set<std::string> ids_seen;
   Results<T> results;
-  match_recurse(root, origMatcher, ids_seen, results);
-  return results;
-}
-
-/* TODO: make this stack-based so it doesn't stack overflow and so we can
-   support lazy creation of results; check out branch stack-based (which
-   segfaults) */
-template <typename T>
-void match_recurse(T & root,
-                   const Matcher<T> & matcher,
-                   std::unordered_set<std::string> & ids_seen,
-                   Results<T> & results)
-{
-  auto res = matcher(root);
-  if (res.didCompleteMatch and ids_seen.find(root.id()) == ids_seen.end()) {
-    ids_seen.insert(root.id());
-    results.push_back(root);
-  }
-  auto nextMatcher =
-      Matcher<T>::recurse_combine_matchers(matcher, res.newMatcher);
-  /* quit this subtree if original is from root and no new matcher given */
-  if (nextMatcher) {
-    for (auto child : root.children()) {
-      match_recurse(child, *nextMatcher, ids_seen, results);
+  struct MatchAndNode {
+    Matcher<T> match;
+    std::vector<T> children;
+    typename std::vector<T>::iterator curChild;
+    MatchAndNode(Matcher<T> matcher, const std::vector<T> & child_v)
+        : match(matcher), children(child_v), curChild(children.begin())
+    {
+    }
+  };
+  std::stack<MatchAndNode> cur_branch;
+  std::vector<T> children{root};
+  cur_branch.emplace(matcher, children);
+  while (!cur_branch.empty()) {
+    MatchAndNode & cur = cur_branch.top();
+    if (cur.curChild == cur.children.end()) {
+      cur_branch.pop();
+      continue;
+    }
+    T node = *cur.curChild;
+    ++cur.curChild;
+    auto curMatcher = cur.match;
+    auto res = curMatcher(node);
+    if (res.didCompleteMatch and ids_seen.find(node.id()) == ids_seen.end()) {
+      ids_seen.insert(node.id());
+      results.push_back(node);
+    }
+    auto nextMatcher =
+        Matcher<T>::recurse_combine_matchers(curMatcher, res.newMatcher);
+    if (nextMatcher) {
+      auto children = node.children();
+      auto beg      = children.begin();
+      auto end = children.end();
+      if (beg != end) {
+        cur_branch.emplace(*nextMatcher, children);
+      }
     }
   }
+  return results;
 }
 }
 }
