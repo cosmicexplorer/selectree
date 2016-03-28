@@ -12,15 +12,15 @@ struct TreeLike {
       : counter(count), children_mem(children_arg), name(name_arg)
   {
   }
-  std::string id()
+  std::string id() const
   {
     return std::to_string(counter);
   }
-  std::vector<TreeLike> children()
+  std::vector<TreeLike> children() const
   {
     return children_mem;
   }
-  std::string get_name()
+  std::string get_name() const
   {
     return name;
   }
@@ -33,7 +33,7 @@ std::string PrintResults(Vect v)
   for (auto el : v) {
     s += std::string("[") + el.id() + std::string(",") + el.get_name() + "]\n";
   }
-  return s;
+  return s + "---\n";
 }
 
 int main()
@@ -47,9 +47,13 @@ int main()
   using tm = Matcher<TreeLike>;
   tm m([](auto el) {
     if (el.get_name() == "a") {
-      return match_ret{true, tm([](auto el) {
-                         return match_ret{el.get_name() == "c", boost::none};
-                       })};
+      return match_ret{
+          true, tm([](auto el) {
+                  return match_ret{el.get_name() == "c", boost::none};
+                }) ||
+                    !tm([](auto el) {
+                      return match_ret{el.get_name() == "b", boost::none};
+                    })};
     }
     return match_ret{false, boost::none};
   });
@@ -76,7 +80,10 @@ int main()
   std::cout << PrintResults(resOr);
   tm mNot = !tm([](auto el) {
     return match_ret{el.get_name() == "b", boost::none};
-  });
+  }) &&
+            !tm([](auto el) {
+              return match_ret{el.id() == "1", boost::none};
+            });
   auto resNot = match(a, mNot);
   std::cout << PrintResults(resNot);
 }

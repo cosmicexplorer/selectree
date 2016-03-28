@@ -15,12 +15,13 @@ Matcher<T> Matcher<T>::setRegenerate(bool regen) const
 template <typename T>
 Matcher<T> Matcher<T>::operator||(const Matcher<T> & rhs) const
 {
-  return Matcher<T>([&](auto el) {
-    auto left_res  = (*this)(el);
-    auto right_res = rhs(el);
-    bool condition = left_res.didCompleteMatch or right_res.didCompleteMatch;
-    bool r         = regenerate or rhs.regenerate;
-    auto comb      = combineByOr(r, left_res.newMatcher, right_res.newMatcher);
+  const Matcher<T> & that = *this;
+  return Matcher<T>([=](auto el) {
+    return_type left(that(el));
+    return_type right(rhs(el));
+    bool condition   = left.didCompleteMatch or right.didCompleteMatch;
+    bool r           = regenerate or rhs.regenerate;
+    maybe_match comb = combineByOr(r, left.newMatcher, right.newMatcher);
     return return_type{condition, comb};
   });
 }
@@ -44,12 +45,13 @@ typename Matcher<T>::maybe_match
 template <typename T>
 Matcher<T> Matcher<T>::operator&&(const Matcher<T> & rhs) const
 {
-  return Matcher<T>([&](auto el) {
-    auto left_res  = (*this)(el);
-    auto right_res = rhs(el);
-    bool condition = left_res.didCompleteMatch and right_res.didCompleteMatch;
-    bool r         = regenerate and rhs.regenerate;
-    auto comb      = combineByAnd(r, left_res.newMatcher, right_res.newMatcher);
+  const Matcher<T> & that = *this;
+  return Matcher<T>([=](auto el) {
+    return_type left(that(el));
+    return_type right(rhs(el));
+    bool condition   = left.didCompleteMatch and right.didCompleteMatch;
+    bool r           = regenerate and rhs.regenerate;
+    maybe_match comb = combineByAnd(r, left.newMatcher, right.newMatcher);
     return return_type{condition, comb};
   });
 }
@@ -69,8 +71,9 @@ typename Matcher<T>::maybe_match
 template <typename T>
 Matcher<T> Matcher<T>::operator!() const
 {
-  return Matcher<T>([&](auto el) {
-    auto res  = (*this)(el);
+  const Matcher<T> & that = *this;
+  return Matcher<T>([=](auto el) {
+    return_type res(that(el));
     bool cond = !res.didCompleteMatch;
     return_type result;
     if (res.newMatcher) {
