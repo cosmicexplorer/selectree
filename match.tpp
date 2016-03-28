@@ -111,6 +111,9 @@ Results<T> match(T root, const Matcher<T> & origMatcher)
   return results;
 }
 
+/* TODO: make this stack-based so it doesn't stack overflow and so we can
+   support lazy creation of results; check out branch stack-based (which
+   segfaults) */
 template <typename T>
 void match_recurse(T & root,
                    const Matcher<T> & matcher,
