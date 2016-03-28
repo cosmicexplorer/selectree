@@ -1,7 +1,6 @@
 #ifndef ___SELECTREE_MATCH___
 #define ___SELECTREE_MATCH___
 
-#include <boost/variant.hpp>
 #include <boost/optional.hpp>
 #include <vector>
 #include <stdexcept>
@@ -27,7 +26,7 @@ private:
   Matcher<T> setRegenerate(bool) const;
 
 public:
-  /* doRegenerate is false when a matcher references root */
+  /* doRegenerate should be set to false when a matcher references root */
   Matcher(internal_fun_type f, bool doRegenerate = true)
       : internal_fun(f), regenerate(doRegenerate)
   {
@@ -65,14 +64,6 @@ using Results = std::vector<T>;
 /* note: this strictly evaluates a query; this can block for a while! */
 template <typename T>
 Results<T> match(T, const Matcher<T> &);
-
-/* match is thread-safe; not this! you shouldn't be using this anyway */
-template <typename T>
-void match_recurse(T &,
-                   const Matcher<T> &,
-                   typename Matcher<T>::maybe_match,
-                   std::unordered_set<std::string> &,
-                   Results<T> &);
 }
 }
 

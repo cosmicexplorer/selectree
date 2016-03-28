@@ -33,7 +33,7 @@ std::string PrintResults(Vect v)
   for (auto el : v) {
     s += std::string("[") + el.id() + std::string(",") + el.get_name() + "]\n";
   }
-  return s;
+  return s + std::string("---\n");
 }
 
 int main()
@@ -44,7 +44,7 @@ int main()
   TreeLike c(1, {}, "c");
   TreeLike a(2, {b, c}, "a");
   using match_ret = Matcher<TreeLike>::return_type;
-  using tm = Matcher<TreeLike>;
+  using tm        = Matcher<TreeLike>;
   tm m([](auto el) {
     if (el.get_name() == "a") {
       return match_ret{true, tm([](auto el) {
@@ -55,28 +55,28 @@ int main()
   });
   auto res = match(a, m);
   std::cout << PrintResults(res);
-  tm mAnd = tm([](auto el) {
-              return match_ret{el.get_name() == "b", boost::none};
-            }) &&
-            tm([](auto el) {
-              return match_ret{el.id() == "0", boost::none};
-            });
-  auto resAnd = match(a, mAnd);
-  std::cout << PrintResults(resAnd);
-  tm mOr = tm([](auto el) {
-             return match_ret{el.get_name() == "b", boost::none};
-           }) ||
-           tm([](auto el) {
-             return match_ret{el.get_name() == "c", boost::none};
-           }) ||
-           tm([](auto el) {
-             return match_ret{el.get_name() == "a", boost::none};
-           });
-  auto resOr = match(a, mOr);
-  std::cout << PrintResults(resOr);
-  tm mNot = !tm([](auto el) {
-    return match_ret{el.get_name() == "b", boost::none};
-  });
-  auto resNot = match(a, mNot);
-  std::cout << PrintResults(resNot);
+  /* tm mAnd = tm([](auto el) { */
+  /*             return match_ret{el.get_name() == "b", boost::none}; */
+  /*           }) && */
+  /*           tm([](auto el) { */
+  /*             return match_ret{el.id() == "0", boost::none}; */
+  /*           }); */
+  /* auto resAnd = match(a, mAnd); */
+  /* std::cout << PrintResults(resAnd); */
+  /* tm mOr = tm([](auto el) { */
+  /*            return match_ret{el.get_name() == "b", boost::none}; */
+  /*          }) || */
+  /*          tm([](auto el) { */
+  /*            return match_ret{el.get_name() == "c", boost::none}; */
+  /*          }) || */
+  /*          tm([](auto el) { */
+  /*            return match_ret{el.get_name() == "a", boost::none}; */
+  /*          }); */
+  /* auto resOr = match(a, mOr); */
+  /* std::cout << PrintResults(resOr); */
+  /* tm mNot = !tm([](auto el) { */
+  /*   return match_ret{el.get_name() == "b", boost::none}; */
+  /* }); */
+  /* auto resNot = match(a, mNot); */
+  /* std::cout << PrintResults(resNot); */
 }
