@@ -3,14 +3,6 @@ namespace selectree
 namespace match
 {
 template <typename T>
-Matcher<T> Matcher<T>::setRegenerate(bool regen) const
-{
-  Matcher<T> tmp(*this);
-  tmp.regenerate = regen;
-  return tmp;
-}
-
-template <typename T>
 Matcher<T> Matcher<T>::operator||(const Matcher<T> & rhs) const
 {
   const Matcher<T> & that = *this;
@@ -18,24 +10,24 @@ Matcher<T> Matcher<T>::operator||(const Matcher<T> & rhs) const
     return_type left(that(el));
     return_type right(rhs(el));
     bool condition   = left.didCompleteMatch or right.didCompleteMatch;
-    bool r           = regenerate or rhs.regenerate;
-    maybe_match comb = combineByOr(r, left.newMatcher, right.newMatcher);
-    return return_type{condition, comb};
+    maybe_match comb = combineByOr(left.newMatcher, right.newMatcher);
+    maybe_match same_comb =
+        combineByOr(left.sameStageMatcher, right.sameStageMatcher);
+    return return_type(condition, comb);
   });
 }
 
 template <typename T>
 typename Matcher<T>::maybe_match
-    Matcher<T>::combineByOr(bool regen,
-                            typename Matcher<T>::maybe_match left,
+    Matcher<T>::combineByOr(typename Matcher<T>::maybe_match left,
                             typename Matcher<T>::maybe_match right)
 {
   if (left and right) {
-    return (*left || *right).setRegenerate(regen); /* this is OUR operator|| */
+    return *left || *right; /* this is OUR operator|| */
   } else if (left) {
-    return left->setRegenerate(regen);
+    return left;
   } else if (right) {
-    return right->setRegenerate(regen);
+    return right;
   }
   return boost::none;
 }
@@ -48,20 +40,20 @@ Matcher<T> Matcher<T>::operator&&(const Matcher<T> & rhs) const
     return_type left(that(el));
     return_type right(rhs(el));
     bool condition   = left.didCompleteMatch and right.didCompleteMatch;
-    bool r           = regenerate and rhs.regenerate;
-    maybe_match comb = combineByAnd(r, left.newMatcher, right.newMatcher);
-    return return_type{condition, comb};
+    maybe_match comb = combineByAnd(left.newMatcher, right.newMatcher);
+    maybe_match same_comb =
+        combineByAnd(left.sameStageMatcher, left.sameStageMatcher);
+    return return_type(condition, comb, same_comb);
   });
 }
 
 template <typename T>
 typename Matcher<T>::maybe_match
-    Matcher<T>::combineByAnd(bool regen,
-                             typename Matcher<T>::maybe_match left,
+    Matcher<T>::combineByAnd(typename Matcher<T>::maybe_match left,
                              typename Matcher<T>::maybe_match right)
 {
   if (left and right) {
-    return (*left && *right).setRegenerate(regen); /* this is OUR operator&& */
+    return *left && *right; /* this is OUR operator&& */
   }
   return boost::none;
 }
@@ -75,13 +67,87 @@ Matcher<T> Matcher<T>::operator!() const
     bool cond = !res.didCompleteMatch;
     return_type result;
     if (res.newMatcher) {
-      Matcher<T> tmp(!*res.newMatcher);
-      tmp.regenerate = regenerate;
-      result         = {cond, tmp};
-    } else {
-      result = {cond, boost::none};
+      Matcher<T> newm(!*res.newMatcher);
+      if (res.sameStageMatcher) {
+        return return_type(cond, newm, !*res.sameStageMatcher);
+      }
+      return return_type(cond, newm);
     }
-    return result;
+    if (res.sameStageMatcher) {
+      Matcher<T> sm(!*res.sameStageMatcher);
+      return return_type(cond, boost::none, sm);
+    }
+    return return_type(cond);
+  });
+}
+
+template <typename T>
+Matcher<T> Matcher<T>::operator>(const Matcher<T> & rhs) const
+{
+  const Matcher<T> & that = *this;
+  return Matcher<T>([=](T & el) {
+    return_type left(that(el));
+    bool cond = left.didCompleteMatch;
+    maybe_match next(cond ? maybe_match(rhs) : boost::none);
+    maybe_match child(
+        left.newMatcher ? combineByOr((*left.newMatcher > rhs), next) : next);
+    maybe_match same_stage(
+        left.sameStageMatcher
+            ? combineByOr((*left.sameStageMatcher > rhs), next)
+            : next);
+    return return_type(false, child, same_stage);
+  });
+}
+
+template <typename T>
+Matcher<T> Matcher<T>::operator>>(const Matcher<T> & rhs) const
+{
+  return (*this) > rhs.infinite();
+}
+
+template <typename T>
+Matcher<T> Matcher<T>::operator+(const Matcher<T> & rhs) const
+{
+  const Matcher<T> & that = *this;
+  return Matcher<T>([=](T & el) {
+    return_type left(that(el));
+    bool cond = left.didCompleteMatch;
+    maybe_match next(cond ? maybe_match(rhs) : boost::none);
+    maybe_match child(
+        left.newMatcher ? combineByOr((*left.newMatcher + rhs), next) : next);
+    maybe_match same_stage(
+        left.sameStageMatcher
+            ? combineByOr((*left.sameStageMatcher + rhs), next)
+            : next);
+    return return_type(cond, child, same_stage);
+  });
+}
+
+template <typename T>
+Matcher<T> Matcher<T>::operator^(const Matcher<T> & rhs) const
+{
+  return ((*this) + rhs).infiniteSibling();
+}
+
+template <typename T>
+Matcher<T> Matcher<T>::infinite() const
+{
+  const Matcher<T> & that = *this;
+  return Matcher<T>([=](T & el) {
+    return_type res(that(el));
+    return return_type(res.didCompleteMatch, combineByOr(that, res.newMatcher),
+                       res.sameStageMatcher);
+  });
+}
+
+template <typename T>
+Matcher<T> Matcher<T>::infiniteSibling() const
+{
+  const Matcher<T> & that = *this;
+  return Matcher<T>([=](T & el) {
+    return_type res(that(el));
+    return return_type(res.didCompleteMatch, res.newMatcher,
+                       combineByOr(res.sameStageMatcher, res));
   });
 }
 
@@ -89,16 +155,10 @@ template <typename T>
 typename Matcher<T>::maybe_match Matcher<T>::recurse_combine_matchers(
     Matcher<T> cur, typename Matcher<T>::maybe_match nextStage)
 {
-  if (cur.regenerate) {
-    if (nextStage) {
-      return cur || *nextStage;
-    }
-    return cur;
-  }
   if (nextStage) {
-    return *nextStage;
+    return cur || *nextStage;
   }
-  return boost::none;
+  return cur;
 }
 
 template <typename T>
@@ -108,7 +168,8 @@ Iterator<T>::Iterator()
 }
 
 template <typename T>
-typename Matcher<T>::maybe_match Iterator<T>::match_helper(T & node, const Matcher<T> & matcher)
+typename Matcher<T>::maybe_match
+    Iterator<T>::match_helper(T & node, const Matcher<T> & matcher)
 {
   auto res = matcher(node);
   auto id = node.id();

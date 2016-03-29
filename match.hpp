@@ -30,24 +30,19 @@ struct Matcher {
   };
   using internal_fun_type = std::function<return_type(T &)>;
 
-private:
+protected:
   internal_fun_type internal_fun;
-  bool regenerate;
 
-  Matcher<T> setRegenerate(bool) const;
-  static maybe_match combineByOr(bool, maybe_match, maybe_match);
-  static maybe_match combineByAnd(bool, maybe_match, maybe_match);
+  static maybe_match combineByOr(maybe_match, maybe_match);
+  static maybe_match combineByAnd(maybe_match, maybe_match);
 
   friend class Iterator<T>;
   static maybe_match recurse_combine_matchers(Matcher<T>, maybe_match);
 
 public:
-  /* doRegenerate should be set to false when a matcher references root */
-  Matcher(bool doRegenerate, const internal_fun_type & f)
-      : internal_fun(f), regenerate(doRegenerate)
-  {
-  }
-  Matcher(const internal_fun_type & f) : internal_fun(f), regenerate(true)
+  /* TODO: make this quit faster (don't search the whole tree maybe) when a
+   * matcher references root */
+  Matcher(const internal_fun_type & f) : internal_fun(f)
   {
   }
 
@@ -61,6 +56,22 @@ public:
   Matcher<T> operator||(const Matcher<T> &) const;
   Matcher<T> operator&&(const Matcher<T> &) const;
   Matcher<T> operator!() const;
+
+  /*** css combinators ***/
+  /* immediate descendant */
+  Matcher<T> operator>(const Matcher<T> &) const;
+  /* descendant */
+  Matcher<T> operator>>(const Matcher<T> &) const;
+  /* immediate sibling */
+  Matcher<T> operator+(const Matcher<T> &) const;
+  /* sibling (corresponding to CSS's ~ operator) */
+  Matcher<T> operator^(const Matcher<T> &) const;
+
+
+  /* match this at current level or any subtree below */
+  Matcher<T> infinite() const;
+  /* match this at current sibling or any sibling further */
+  Matcher<T> infiniteSibling() const;
 };
 
 template <typename T>

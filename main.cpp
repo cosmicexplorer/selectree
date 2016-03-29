@@ -1,4 +1,4 @@
-#include "match.hpp"
+#include "css.hpp"
 
 #include <iostream>
 #include <vector>
@@ -45,17 +45,18 @@ int main()
 {
   using selectree::match::Matcher;
   using selectree::match::match;
-  TreeLike b(0, {}, "b");
+  TreeLike d(3, {}, "d");
+  TreeLike b(0, {d}, "b");
   TreeLike c(1, {}, "c");
   TreeLike a(2, {b, c}, "a");
   using match_ret = Matcher<TreeLike>::return_type;
   using tm = Matcher<TreeLike>;
   tm m([](auto el) {
     if (el.get_name() == "a") {
-      return match_ret{
+      return match_ret(
           true,
           tm([](auto el) { return match_ret(el.get_name() == "c"); }) ||
-              !tm([](auto el) { return match_ret(el.get_name() == "b"); })};
+              !tm([](auto el) { return match_ret(el.get_name() == "b"); }));
     }
     return match_ret();
   });
@@ -74,4 +75,13 @@ int main()
             !tm([](auto el) { return match_ret(el.id() == "1"); });
   auto resNot = match(a, mNot);
   std::cout << PrintResults(resNot);
+  std::cout << "CSS" << std::endl;
+  tm mArrow = tm([](auto el) { return match_ret(el.get_name() == "a"); }) >
+              tm([](auto el) { return match_ret(el.get_name() == "b"); });
+  auto resArrow = match(a, mArrow);
+  std::cout << PrintResults(resArrow);
+  tm mDesc = tm([](auto el) { return match_ret(el.get_name() == "a"); }) >>
+             tm([](auto el) { return match_ret{el.get_name() == "d"}; });
+  auto resDesc = match(a, mDesc);
+  std::cout << PrintResults(resDesc);
 }
