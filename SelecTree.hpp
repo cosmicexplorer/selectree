@@ -6,9 +6,9 @@
 
 namespace selectree
 {
-/* requires: name -> std::string, children -> iterable<T>,
- * attribute(std::string) -> T, attributeKeys -> iterable<std::string>,
- * value -> std::string, (id -> int)? */
+/* requires: name -> std::string, begin -> iterator<T>, end -> iterator<T>,
+ * attribute(std::string) -> boost::optional<T>, attributeKeys ->
+ * iterable<std::string>, value -> std::string, id -> std::string */
 /* value() is used for 'tag[key="value"]' constructions */
 /* TODO: figure out how to make sure that if a reference is passed in, only
  * references will be returned in the match::Results, but if children() returns

@@ -1,2 +1,5 @@
 main
 main.o
+*.o
+*.flex.cpp
+*.flex.hpp
