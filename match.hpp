@@ -65,6 +65,18 @@ public:
   /* sibling (corresponding to CSS's ~ operator) */
   Matcher<T> operator^(const Matcher<T> &) const;
 
+  /*** xpath combinators ***/
+  /* / (single slash) */
+  inline Matcher<T> operator/(const Matcher<T> & rhs) const
+  {
+    return (*this) > rhs;
+  }
+  /* // (double slash) */
+  inline Matcher<T> operator%(const Matcher<T> & rhs) const
+  {
+    return (*this) >> rhs;
+  }
+
   /* match this at current level or any subtree below */
   Matcher<T> infinite() const;
   /* match this at current sibling or any sibling further */
@@ -74,12 +86,13 @@ public:
 template <typename T>
 struct MatchAndNode {
   Matcher<T> match;
+  const Matcher<T> origMatch;
   T & parent;
   typename T::iterator curChild;
   typename T::iterator curEnd;
   MatchAndNode(Matcher<T> matcher, T & parent_arg)
-      : match(matcher), parent(parent_arg), curChild(std::begin(parent)),
-        curEnd(std::end(parent))
+      : match(matcher), origMatch(matcher), parent(parent_arg),
+        curChild(std::begin(parent)), curEnd(std::end(parent))
   {
   }
 };

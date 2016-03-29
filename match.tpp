@@ -15,7 +15,7 @@ Matcher<T> Matcher<T>::operator||(const Matcher<T> & rhs) const
     maybe_match comb = combineByOr(left.newMatcher, right.newMatcher);
     maybe_match same_comb =
         combineByOr(left.sameStageMatcher, right.sameStageMatcher);
-    return return_type(condition, comb);
+    return return_type(condition, comb, same_comb);
   });
 }
 
@@ -111,20 +111,20 @@ Matcher<T> Matcher<T>::operator+(const Matcher<T> & rhs) const
     return_type left(that(el));
     bool cond = left.didCompleteMatch;
     maybe_match next(cond ? maybe_match(rhs) : boost::none);
-    maybe_match child(
-        left.newMatcher ? combineByOr((*left.newMatcher + rhs), next) : next);
+    maybe_match child(left.newMatcher ? maybe_match(*left.newMatcher + rhs)
+                                      : boost::none);
     maybe_match same_stage(
         left.sameStageMatcher
             ? combineByOr((*left.sameStageMatcher + rhs), next)
             : next);
-    return return_type(cond, child, same_stage);
+    return return_type(false, child, same_stage);
   });
 }
 
 template <typename T>
 Matcher<T> Matcher<T>::operator^(const Matcher<T> & rhs) const
 {
-  return ((*this) + rhs).infiniteSibling();
+  return (*this) + rhs.infiniteSibling();
 }
 
 template <typename T>
@@ -145,14 +145,8 @@ Matcher<T> Matcher<T>::infiniteSibling() const
   return Matcher<T>([=](T & el) {
     return_type res(that(el));
     return return_type(res.didCompleteMatch, res.newMatcher,
-                       combineByOr(res.sameStageMatcher, res));
+                       combineByOr(res.sameStageMatcher, that));
   });
-}
-
-template <typename T>
-Iterator<T>::Iterator()
-    : ids_seen(), cur_result(boost::none), cur_branch(), orig(boost::none)
-{
 }
 
 template <typename T>
@@ -183,12 +177,18 @@ void Iterator<T>::do_increment()
     }
     T & node = *cur.curChild;
     ++cur.curChild;
-    Matcher<T> & curMatcher = cur.match;
+    Matcher<T> & curMatcher      = cur.match;
+    const Matcher<T> & origMatch = cur.origMatch;
     auto sameStageMatcher = match_helper(node, curMatcher);
-    if (sameStageMatcher) {
-      curMatcher = *sameStageMatcher;
-    }
+    curMatcher =
+        sameStageMatcher ? (origMatch || *sameStageMatcher) : origMatch;
   }
+}
+
+template <typename T>
+Iterator<T>::Iterator()
+    : ids_seen(), cur_result(boost::none), cur_branch(), orig(boost::none)
+{
 }
 
 template <typename T>
