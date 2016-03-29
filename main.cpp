@@ -41,6 +41,26 @@ std::string PrintResults(Vect v)
   return s + "---\n";
 }
 
+template <typename Vect>
+void CheckSame(Vect v, std::vector<TreeLike> v2)
+{
+
+  auto i = std::begin(v);
+  auto j = std::begin(v2);
+  for (; i != std::end(v) && j != std::end(v2); ++i, ++j) {
+    if (i->id() != j->id()) {
+      std::cerr << "failed:\n" << PrintResults(v) << "is not equal to\n"
+                << PrintResults(v2);
+      return;
+    }
+  }
+  if (i != std::end(v) || j != std::end(v2)) {
+    std::cerr << "failed:\n" << PrintResults(v) << "is not equal to\n"
+              << PrintResults(v2);
+  }
+  std::cerr << "succeeded" << std::endl;
+}
+
 int main()
 {
   using selectree::match::Matcher;
@@ -51,37 +71,49 @@ int main()
   TreeLike a(2, {b, c}, "a");
   using match_ret = Matcher<TreeLike>::return_type;
   using tm = Matcher<TreeLike>;
-  tm m([](auto el) {
+  tm m1([](auto el) {
     if (el.get_name() == "a") {
       return match_ret(
-          true,
-          tm([](auto el) { return match_ret(el.get_name() == "c"); }) ||
-              !tm([](auto el) { return match_ret(el.get_name() == "b"); }));
+          true, !tm([](auto el) { return match_ret(el.get_name() == "b"); }));
+    }
+    return match_ret();
+  });
+  auto res1 = match(a, m1);
+  CheckSame(res1, {a, c});
+  tm m([](auto el) {
+    if (el.get_name() == "a") {
+      return match_ret(true, (!tm([](auto el) {
+                               return match_ret(el.get_name() == "b");
+                             })).infinite());
     }
     return match_ret();
   });
   auto res = match(a, m);
-  std::cout << PrintResults(res);
+  CheckSame(res, {a, d, c});
   tm mAnd = tm([](auto el) { return match_ret(el.get_name() == "b"); }) &&
             tm([](auto el) { return match_ret(el.id() == "0"); });
   auto resAnd = match(a, mAnd);
-  std::cout << PrintResults(resAnd);
+  CheckSame(resAnd, {b});
   tm mOr = tm([](auto el) { return match_ret(el.get_name() == "b"); }) ||
            tm([](auto el) { return match_ret(el.get_name() == "c"); }) ||
            tm([](auto el) { return match_ret(el.get_name() == "a"); });
   auto resOr = match(a, mOr);
-  std::cout << PrintResults(resOr);
+  CheckSame(resOr, {a, b, c});
   tm mNot = !tm([](auto el) { return match_ret(el.get_name() == "b"); }) &&
             !tm([](auto el) { return match_ret(el.id() == "1"); });
   auto resNot = match(a, mNot);
-  std::cout << PrintResults(resNot);
-  std::cout << "CSS" << std::endl;
+  CheckSame(resNot, {a, d});
+  std::cerr << "CSS" << std::endl;
   tm mArrow = tm([](auto el) { return match_ret(el.get_name() == "a"); }) >
               tm([](auto el) { return match_ret(el.get_name() == "b"); });
   auto resArrow = match(a, mArrow);
-  std::cout << PrintResults(resArrow);
+  CheckSame(resArrow, {b});
+  tm mArrow2 = tm([](auto el) { return match_ret(el.get_name() == "a"); }) >
+               tm([](auto el) { return match_ret(el.get_name() == "d"); });
+  auto resArrow2 = match(a, mArrow2);
+  CheckSame(resArrow2, {});
   tm mDesc = tm([](auto el) { return match_ret(el.get_name() == "a"); }) >>
              tm([](auto el) { return match_ret{el.get_name() == "d"}; });
   auto resDesc = match(a, mDesc);
-  std::cout << PrintResults(resDesc);
+  CheckSame(resDesc, {d});
 }

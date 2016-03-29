@@ -30,14 +30,8 @@ struct Matcher {
   };
   using internal_fun_type = std::function<return_type(T &)>;
 
-protected:
+private:
   internal_fun_type internal_fun;
-
-  static maybe_match combineByOr(maybe_match, maybe_match);
-  static maybe_match combineByAnd(maybe_match, maybe_match);
-
-  friend class Iterator<T>;
-  static maybe_match recurse_combine_matchers(Matcher<T>, maybe_match);
 
 public:
   /* TODO: make this quit faster (don't search the whole tree maybe) when a
@@ -51,6 +45,10 @@ public:
   {
     return internal_fun(arg);
   }
+
+  /* utility methods */
+  static maybe_match combineByOr(maybe_match, maybe_match);
+  static maybe_match combineByAnd(maybe_match, maybe_match);
 
   /* algebraic operators */
   Matcher<T> operator||(const Matcher<T> &) const;
@@ -66,7 +64,6 @@ public:
   Matcher<T> operator+(const Matcher<T> &) const;
   /* sibling (corresponding to CSS's ~ operator) */
   Matcher<T> operator^(const Matcher<T> &) const;
-
 
   /* match this at current level or any subtree below */
   Matcher<T> infinite() const;
@@ -99,6 +96,9 @@ class Iterator : std::iterator<std::forward_iterator_tag, T>
   std::unordered_set<std::string> ids_seen;
   boost::optional<T &> cur_result;
   std::stack<MatchAndNode<T>> cur_branch;
+  /* FIXME: make this boost::none if a boolean "regenerate" field in the
+     original Matcher<T> passed in is true */
+  boost::optional<Matcher<T>> orig;
 
   typename Matcher<T>::maybe_match match_helper(T &, const Matcher<T> &);
   void do_increment();

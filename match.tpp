@@ -1,3 +1,5 @@
+#include <memory>
+
 namespace selectree
 {
 namespace match
@@ -24,9 +26,11 @@ typename Matcher<T>::maybe_match
 {
   if (left and right) {
     return *left || *right; /* this is OUR operator|| */
-  } else if (left) {
+  }
+  if (left) {
     return left;
-  } else if (right) {
+  }
+  if (right) {
     return right;
   }
   return boost::none;
@@ -66,18 +70,12 @@ Matcher<T> Matcher<T>::operator!() const
     return_type res(that(el));
     bool cond = !res.didCompleteMatch;
     return_type result;
-    if (res.newMatcher) {
-      Matcher<T> newm(!*res.newMatcher);
-      if (res.sameStageMatcher) {
-        return return_type(cond, newm, !*res.sameStageMatcher);
-      }
-      return return_type(cond, newm);
-    }
-    if (res.sameStageMatcher) {
-      Matcher<T> sm(!*res.sameStageMatcher);
-      return return_type(cond, boost::none, sm);
-    }
-    return return_type(cond);
+    maybe_match child(res.newMatcher ? maybe_match(!*res.newMatcher)
+                                     : boost::none);
+    maybe_match sibling(res.sameStageMatcher
+                            ? maybe_match(!*res.sameStageMatcher)
+                            : boost::none);
+    return return_type(cond, child, sibling);
   });
 }
 
@@ -94,8 +92,8 @@ Matcher<T> Matcher<T>::operator>(const Matcher<T> & rhs) const
     maybe_match same_stage(
         left.sameStageMatcher
             ? combineByOr((*left.sameStageMatcher > rhs), next)
-            : next);
-    return return_type(false, child, same_stage);
+            : boost::none);
+    return return_type(false, next, same_stage);
   });
 }
 
@@ -152,18 +150,8 @@ Matcher<T> Matcher<T>::infiniteSibling() const
 }
 
 template <typename T>
-typename Matcher<T>::maybe_match Matcher<T>::recurse_combine_matchers(
-    Matcher<T> cur, typename Matcher<T>::maybe_match nextStage)
-{
-  if (nextStage) {
-    return cur || *nextStage;
-  }
-  return cur;
-}
-
-template <typename T>
 Iterator<T>::Iterator()
-    : ids_seen(), cur_result(boost::none), cur_branch()
+    : ids_seen(), cur_result(boost::none), cur_branch(), orig(boost::none)
 {
 }
 
@@ -177,8 +165,7 @@ typename Matcher<T>::maybe_match
     ids_seen.insert(id);
     cur_result = node;
   }
-  auto nextMatcher =
-      Matcher<T>::recurse_combine_matchers(matcher, res.newMatcher);
+  auto nextMatcher = Matcher<T>::combineByOr(orig, res.newMatcher);
   if (nextMatcher) {
     cur_branch.emplace(*nextMatcher, node);
   }
@@ -206,7 +193,7 @@ void Iterator<T>::do_increment()
 
 template <typename T>
 Iterator<T>::Iterator(T & root, const Matcher<T> & matcher)
-    : ids_seen(), cur_result(boost::none), cur_branch()
+    : ids_seen(), cur_result(boost::none), cur_branch(), orig(matcher)
 {
   match_helper(root, matcher);
   do_increment();
@@ -256,7 +243,7 @@ template <typename T>
 T * Iterator<T>::operator->() const
 {
   if (cur_result) {
-    return addressof(operator*());
+    return std::addressof(operator*());
   }
   throw match_iteration_error("dereferencing iterator at end of matches!");
 }
