@@ -14,7 +14,7 @@ template <typename T>
 Matcher<T> Matcher<T>::operator||(const Matcher<T> & rhs) const
 {
   const Matcher<T> & that = *this;
-  return Matcher<T>([=](auto el) {
+  return Matcher<T>([=](T & el) {
     return_type left(that(el));
     return_type right(rhs(el));
     bool condition   = left.didCompleteMatch or right.didCompleteMatch;
@@ -44,7 +44,7 @@ template <typename T>
 Matcher<T> Matcher<T>::operator&&(const Matcher<T> & rhs) const
 {
   const Matcher<T> & that = *this;
-  return Matcher<T>([=](auto el) {
+  return Matcher<T>([=](T & el) {
     return_type left(that(el));
     return_type right(rhs(el));
     bool condition   = left.didCompleteMatch and right.didCompleteMatch;
@@ -70,7 +70,7 @@ template <typename T>
 Matcher<T> Matcher<T>::operator!() const
 {
   const Matcher<T> & that = *this;
-  return Matcher<T>([=](auto el) {
+  return Matcher<T>([=](T & el) {
     return_type res(that(el));
     bool cond = !res.didCompleteMatch;
     return_type result;
@@ -108,7 +108,7 @@ Iterator<T>::Iterator()
 }
 
 template <typename T>
-void Iterator<T>::match_helper(T & node, const Matcher<T> & matcher)
+typename Matcher<T>::maybe_match Iterator<T>::match_helper(T & node, const Matcher<T> & matcher)
 {
   auto res = matcher(node);
   auto id = node.id();
@@ -121,6 +121,7 @@ void Iterator<T>::match_helper(T & node, const Matcher<T> & matcher)
   if (nextMatcher) {
     cur_branch.emplace(*nextMatcher, node);
   }
+  return res.sameStageMatcher;
 }
 
 template <typename T>
@@ -135,7 +136,10 @@ void Iterator<T>::do_increment()
     T & node = *cur.curChild;
     ++cur.curChild;
     Matcher<T> & curMatcher = cur.match;
-    match_helper(node, curMatcher);
+    auto sameStageMatcher = match_helper(node, curMatcher);
+    if (sameStageMatcher) {
+      curMatcher = *sameStageMatcher;
+    }
   }
 }
 

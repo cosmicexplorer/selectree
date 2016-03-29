@@ -53,42 +53,25 @@ int main()
   tm m([](auto el) {
     if (el.get_name() == "a") {
       return match_ret{
-          true, tm([](auto el) {
-                  return match_ret{el.get_name() == "c", boost::none};
-                }) ||
-                    !tm([](auto el) {
-                      return match_ret{el.get_name() == "b", boost::none};
-                    })};
+          true,
+          tm([](auto el) { return match_ret(el.get_name() == "c"); }) ||
+              !tm([](auto el) { return match_ret(el.get_name() == "b"); })};
     }
-    return match_ret{false, boost::none};
+    return match_ret();
   });
   auto res = match(a, m);
   std::cout << PrintResults(res);
-  tm mAnd = tm([](auto el) {
-              return match_ret{el.get_name() == "b", boost::none};
-            }) &&
-            tm([](auto el) {
-              return match_ret{el.id() == "0", boost::none};
-            });
+  tm mAnd = tm([](auto el) { return match_ret(el.get_name() == "b"); }) &&
+            tm([](auto el) { return match_ret(el.id() == "0"); });
   auto resAnd = match(a, mAnd);
   std::cout << PrintResults(resAnd);
-  tm mOr = tm([](auto el) {
-             return match_ret{el.get_name() == "b", boost::none};
-           }) ||
-           tm([](auto el) {
-             return match_ret{el.get_name() == "c", boost::none};
-           }) ||
-           tm([](auto el) {
-             return match_ret{el.get_name() == "a", boost::none};
-           });
+  tm mOr = tm([](auto el) { return match_ret(el.get_name() == "b"); }) ||
+           tm([](auto el) { return match_ret(el.get_name() == "c"); }) ||
+           tm([](auto el) { return match_ret(el.get_name() == "a"); });
   auto resOr = match(a, mOr);
   std::cout << PrintResults(resOr);
-  tm mNot = !tm([](auto el) {
-    return match_ret{el.get_name() == "b", boost::none};
-  }) &&
-            !tm([](auto el) {
-              return match_ret{el.id() == "1", boost::none};
-            });
+  tm mNot = !tm([](auto el) { return match_ret(el.get_name() == "b"); }) &&
+            !tm([](auto el) { return match_ret(el.id() == "1"); });
   auto resNot = match(a, mNot);
   std::cout << PrintResults(resNot);
 }

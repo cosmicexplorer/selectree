@@ -12,23 +12,38 @@ namespace selectree
 namespace match
 {
 template <typename T>
+class Iterator;
+
+template <typename T>
 struct Matcher {
   using maybe_match = boost::optional<Matcher<T>>;
   struct return_type {
     bool didCompleteMatch;
     maybe_match newMatcher;
+    maybe_match sameStageMatcher;
+    return_type(bool b = false,
+                maybe_match nmatch  = boost::none,
+                maybe_match ssmatch = boost::none)
+        : didCompleteMatch(b), newMatcher(nmatch), sameStageMatcher(ssmatch)
+    {
+    }
   };
-  using internal_fun_type = std::function<return_type(T)>;
+  using internal_fun_type = std::function<return_type(T &)>;
 
 private:
   internal_fun_type internal_fun;
   bool regenerate;
 
   Matcher<T> setRegenerate(bool) const;
+  static maybe_match combineByOr(bool, maybe_match, maybe_match);
+  static maybe_match combineByAnd(bool, maybe_match, maybe_match);
+
+  friend class Iterator<T>;
+  static maybe_match recurse_combine_matchers(Matcher<T>, maybe_match);
 
 public:
   /* doRegenerate should be set to false when a matcher references root */
-  Matcher(bool doRegenerate, internal_fun_type f)
+  Matcher(bool doRegenerate, const internal_fun_type & f)
       : internal_fun(f), regenerate(doRegenerate)
   {
   }
@@ -37,34 +52,26 @@ public:
   }
 
   /* invoke the lambda that started all this */
-  inline return_type operator()(T arg) const
+  inline return_type operator()(T & arg) const
   {
     return internal_fun(arg);
   }
 
-  /* used in match() and friends */
-  static maybe_match recurse_combine_matchers(Matcher<T>, maybe_match);
-
   /* algebraic operators */
   Matcher<T> operator||(const Matcher<T> &) const;
-  static maybe_match combineByOr(bool, maybe_match, maybe_match);
-
   Matcher<T> operator&&(const Matcher<T> &) const;
-  static maybe_match combineByAnd(bool, maybe_match, maybe_match);
-
-  /* for complement */
   Matcher<T> operator!() const;
 };
 
 template <typename T>
 struct MatchAndNode {
   Matcher<T> match;
-  T parent;
+  T & parent;
   typename T::iterator curChild;
   typename T::iterator curEnd;
   MatchAndNode(Matcher<T> matcher, T & parent_arg)
-      : match(matcher), parent(parent_arg), curChild(parent.begin()),
-        curEnd(parent.end())
+      : match(matcher), parent(parent_arg), curChild(std::begin(parent)),
+        curEnd(std::end(parent))
   {
   }
 };
@@ -82,7 +89,7 @@ class Iterator : std::iterator<std::forward_iterator_tag, T>
   boost::optional<T &> cur_result;
   std::stack<MatchAndNode<T>> cur_branch;
 
-  void match_helper(T &, const Matcher<T> &);
+  typename Matcher<T>::maybe_match match_helper(T &, const Matcher<T> &);
   void do_increment();
 
 public:
