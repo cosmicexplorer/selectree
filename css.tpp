@@ -1,10 +1,4 @@
-namespace selectree
-{
-namespace css
-{
-#include "css.flex.hpp"
-}
-}
+#include "grammars/css.flex.hpp"
 
 #include <sstream>
 
@@ -17,8 +11,7 @@ std::string generate_matcher(std::string input)
   /* FIXME: make this reentrant! http://www.lemoda.net/c/reentrant-parser/ */
   std::stringstream stream(input);
   std::stringstream out;
-  css_yy_FlexLexer lexer(stream, out);
-  lexer.yylex();
+  parser p();
   return out.str();
 }
 }

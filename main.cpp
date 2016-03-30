@@ -142,5 +142,5 @@ int main()
              tm([](auto el) { return match_ret(el.get_name() == "e"); });
   auto resSib2 = match(a, mSib2);
   CheckSame(resSib2, {e});
-  std::cerr << selectree::css::generate_matcher("a") << std::endl;
+  std::cerr << selectree::css::generate_matcher("a 2.5 3");
 }
