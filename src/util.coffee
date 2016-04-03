@@ -1,17 +1,22 @@
-class InternalError extends Error
-  constructor: (msg) ->
-    super "internal error: #{msg}"
+`function* flatMap(gen, fn) {
+  for (let el of gen) {
+    yield*(fn(el));
+  }
+}`
 
-# adds property=value to obj, or property=condition()
-addProp = (obj, prop, valOrCondition = yes) ->
-  obj[prop] =
-    if (valOrCondition instanceof Function)
-      if valOrCondition() then yes else no
-    else if valOrCondition? then valOrCondition
-    else yes
-  obj
+`function* filter(gen, fn) {
+  for (let el of gen) {
+    if (fn(el)) {
+      yield(el);
+    }
+  }
+}`
 
-module.exports = {
-  InternalError
-  addProp
-}
+getChildrenAndIndex = (node) ->
+  p = node.parent()
+  if p
+    children = p.children()
+    [children, (children.findIndex (el) -> el.id() is node.id())]
+  else null
+
+module.exports = {flatMap, filter, getChildrenAndIndex}

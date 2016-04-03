@@ -100,6 +100,8 @@ class SelecTree
             @constructor.GetEmptyChild
     @cachedChildren
 
+  # TODO: add parent() function!
+
   @GetDefaultContent: (obj, opts) -> StringOrFunOptions(obj, opts, 'content')
   content: ->
     @constructor.EachCaseOfOpts @obj, @opts,

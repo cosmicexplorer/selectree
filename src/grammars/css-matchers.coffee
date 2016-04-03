@@ -3,8 +3,6 @@
 _ = require 'lodash'
 uuid = require 'node-uuid'
 
-util = require '../util'
-
 # turns functions of type (child) -> to type (children, index) ->
 getChildIndexMacro = (f) -> (children, index) -> f children[index]
 # tag names
@@ -46,8 +44,7 @@ attributeMatch = (ident, attribMatch, caseInsensitive, idOrString) ->
   getChildIndexMacro getAttributeMacro ident,
     if equalAttrib? then (attr) -> equalAttrib attr, idOrString, caseFold
     else if matchAttrib? then (attr) -> matchAttrib attr, escapedId, flags
-    else throw new util.InternalError "unrecognized attribute matcher
-      #{attribMatch}"
+    else throw new Error "unrecognized attribute matcher #{attribMatch}"
 
 idSelector = (id) -> getChildIndexMacro (child) -> child.id() is id
 classSelector = (classSel) -> getChildIndexMacro (child) ->
