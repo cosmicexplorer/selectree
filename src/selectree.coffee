@@ -3,7 +3,7 @@ _ = require 'lodash'
 util = require './util'
 {parse: parseCSS} = require './grammars/css.tab'
 # ParseXPath = require './xpath'
-{match} = require './tree-walker'
+{match} = require './match'
 
 # utility function
 StringOrFunOptions = (obj, opts, field) ->

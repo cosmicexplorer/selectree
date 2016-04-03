@@ -54,7 +54,7 @@ classSelector = (classSel) -> getChildIndexMacro (child) ->
   attributeMatchMap['~='] child.class(), _.escapeRegExp classSel
 
 pseudoClassMap =
-  # absolutePath is used in ../tree-walkers.coffee to optimize out matchers
+  # absolutePath is used in ../match.coffee to optimize out matchers
   # which refer to the root node once they fail
   'root': do ->
     res = getChildIndexMacro (child) -> child.isRoot
