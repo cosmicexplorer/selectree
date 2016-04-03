@@ -31,6 +31,7 @@ createOr = (match1, match2) ->
 
 createAnd = (match1, match2) -> if (not match1) or (not match2) then null
 else (node) ->
+  # NOTE: traverses entire tree twice, synchronously!!!
   leftResults = Array.from (match1 node)
   rightResults = Array.from (match2 node)
   yield from _.intersectionBy [leftResults, rightResults], (el) -> el.id()
@@ -44,6 +45,7 @@ infinite = (matcher) -> if not matcher then null else (node) ->
 acceptAll = infinite (node) -> yield node
 
 createNot = (matcher) -> if not matcher then acceptAll else (node) ->
+  # NOTE: traverses entire tree twice, synchronously!!!!
   matchResults = Array.from (matcher node)
   all = Array.from (acceptAll node)
   yield from _.differenceBy all, matchResults, (el) -> el.id()
@@ -72,7 +74,7 @@ sibling = (match1, match2) -> if (not match1) or (not match2) then null
 else (node) ->
   yield from util.flatMap (match1 node), (matched) ->
     [children, index] = util.getChildrenAndIndex matched
-    if index < children.length - 1
+    if index <= children.length - 1
       for i in [(index + 1)..(children.length - 1)]
         yield from (match2 children[i])
     null

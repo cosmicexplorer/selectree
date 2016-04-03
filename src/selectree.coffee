@@ -1,6 +1,4 @@
-stream = require 'stream'
 _ = require 'lodash'
-util = require './util'
 {parse: parseCSS} = require './grammars/css.tab'
 # ParseXPath = require './xpath'
 {match} = require './match'
@@ -41,14 +39,14 @@ class SelecTree
 
   cloneOpts: -> Object.create @origOpts
 
-  constructor: (@obj, @opts, parent = null) ->
+  constructor: (@obj, @opts, @parentSel = null) ->
     @constructor.ValidateArgs @opts
     @cachedChildren = null
     # clone opts from original prototype only (root's prototype). don't keep
     # prototype to every parent (memory leak)
-    if parent?
+    if @parentSel?
       @isRoot = no
-      @origOpts = parent.opts
+      @origOpts = @parentSel.opts
     else
       @isRoot = yes
       @origOpts = @opts
@@ -100,7 +98,7 @@ class SelecTree
             @constructor.GetEmptyChild
     @cachedChildren
 
-  # TODO: add parent() function!
+  parent: -> @parentSel
 
   @GetDefaultContent: (obj, opts) -> StringOrFunOptions(obj, opts, 'content')
   content: ->
