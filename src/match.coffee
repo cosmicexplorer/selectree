@@ -67,17 +67,21 @@ childMatcher = (match1, match2) ->
 descendant = (match1, match2) -> childMatcher match1, (infinite match2)
 
 # node is a SelecTree node, matchers are functions as described above
-match = (node, matcher) -> yield from matchHelper node, matcher, new Set
+match = (node, matcher) ->
+  gen = matchHelper node, [node], 0, matcher, new Set
+  yield from gen
 
 # matchSet is a Set used to de-duplicate node results; we use the nodes' ids
 # instead of the nodes themselves in a weak set to allow for generated trees
-matchHelper = (node, matcher, idsSeen) ->
+matchHelper = (node, children, index, matcher, idsSeen) ->
   {found, childMatcher} = matcher node, children, index
   id = node.id()
   if found and not idsSeen.has id
     idsSeen.add id
     yield node
-  yield from match child, childMatcher for child in node.children()
+  newChildren = node.children()
+  for child, ind in newChildren
+    yield from matchHelper child, newChildren, ind, childMatcher, idsSeen
   null
 
 module.exports = {
