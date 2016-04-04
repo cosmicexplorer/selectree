@@ -10,11 +10,11 @@ escape    {unicode}|\\[^\n\r\f0-9a-f]
 nmchar    [_a-z0-9-]|{nonascii}|{escape}
 num       [0-9]+|[0-9]*\.[0-9]+
 string    {string1}|{string2}
-string1   \"([^\n\r\f\\"]|\\{nl}|{nonascii}|{escape})*\" /* " */
-string2   \'([^\n\r\f\\']|\\{nl}|{nonascii}|{escape})*\' /* ' */
+string1   \"([^\n\r\f\\"]|\\{nl}|{nonascii}|{escape})*\"
+string2   \'([^\n\r\f\\']|\\{nl}|{nonascii}|{escape})*\'
 invalid   {invalid1}|{invalid2}
-invalid1  \"([^\n\r\f\\"]|\\{nl}|{nonascii}|{escape})* /* " */
-invalid2  \'([^\n\r\f\\']|\\{nl}|{nonascii}|{escape})* /* ' */
+invalid1  \"([^\n\r\f\\"]|\\{nl}|{nonascii}|{escape})*
+invalid2  \'([^\n\r\f\\']|\\{nl}|{nonascii}|{escape})*
 nl        \n|\r\n|\r|\f
 w         [ \t\r\n\f]*
 

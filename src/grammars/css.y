@@ -34,13 +34,12 @@ selector
   : simple_selector_sequence comb_select_seq* -> $2.reduce(c.doCombination, $1)
   ;
 
+/* combinators can be surrounded by whitespace */
 combinator
-  /* combinators can be surrounded by whitespace */
-  /* "neighbor" means have same parent */
-  : PLUS S* /* immediate neighbor */
-  | TILDE S* /* neighbor */
-  | GREATER S* /* direct descendant */
-  | S+ -> 'descendant' /* descendant */
+  : PLUS S*
+  | TILDE S*
+  | GREATER S*
+  | S+ -> 'descendant'
   ;
 
 simple_selector_startseq
@@ -65,16 +64,13 @@ simple_selector_sequence
   | simple_selector_endseq+ -> $1.reduce(m.createAnd)
   ;
 
-/* TODO: also allow multiple different options of tag type, maybe with a
-   pipe character? this could probably be done with arbitrary elements of a
-   simple_selector_sequence, too, even without parens (but parens would make it
-   easier) */
+/* TODO: allow OR with parens, AND with custom operator */
+/* N.B.: allowing integers is NOT allowed in standard css3! this is done so
+   that selection over javascript arrays is easier, allowing use of the "0",
+   "1", etc. selectors instead of the 1-based indexing through :nth-child()
+   and friends */
 element_name
   : IDENT -> c.element($1)
-  /* N.B.: allowing integers is NOT allowed in standard css3! this is done so
-     that selection over javascript arrays is easier, allowing use of the "0",
-     "1", etc. selectors instead of the 1-based indexing through :nth-child()
-     and friends */
   | INTEGER -> c.element($1)
   ;
 
@@ -137,9 +133,8 @@ functional_pseudo
   ;
 
 /* amending this from the given grammar to match the 'nth' grammar, given in
-   the same document cited above. all functional pseudo-classes only accept
-   "an+b"-type expressions */
-/* nth */
+ * the same document cited above. all functional pseudo-classes only accept
+ * "an+b"-type expressions */
 numerical_expression
   : ANPLUSB -> c.parseA_N_Plus_BExpr($1)
   | O D D -> c.parseOddExpr()
