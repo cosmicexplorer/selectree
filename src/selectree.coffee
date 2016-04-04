@@ -51,17 +51,16 @@ class SelecTree
       @isRoot = yes
       @origOpts = @opts
 
-  name: -> if @opts.xml then StringOrFunOptions @obj, @opts, 'name'
-  else @opts.name
+  name: ->
+    if @opts.xml then StringOrFunOptions @obj, @opts, 'name'
+    else @opts.name
 
   class: ->
-    if @opts.class?
-      StringOrFunOptions @obj, @opts, 'class'
+    if @opts.class? then StringOrFunOptions @obj, @opts, 'class'
     else @attributes().class
 
   id: ->
-    if @opts.id?
-      StringOrFunOptions @obj, @opts, 'id'
+    if @opts.id? then StringOrFunOptions @obj, @opts, 'id'
     else @attributes().id
 
   # could use generators here, but things like :nth-last-child() require full

@@ -3,17 +3,17 @@
 %ebnf
 %start selectors_group
 
-/* https://github.com/zaach/jison/issues/313 */
 %{
+/* https://github.com/zaach/jison/issues/313 */
 var Jison = require('jison');
-var m = require('./css-matchers');
+var m = require('../match');
+var c = require('./css-matchers');
 %}
 
 %%
 
 selectors_group
-  : selector comma_space_selector*
-      {return [$1].concat($2);}
+  : selector comma_space_selector* { return $2.reduce(m.createOr, $1); }
   | error
       {
         // consider more in-depth error handling
@@ -22,17 +22,11 @@ selectors_group
       }
   ;
 
-comma_space_selector
-  : COMMA S* selector -> $3
-  ;
+comma_space_selector: COMMA S* selector -> $3;
 
-comb_select_seq
-  : combinator simple_selector_sequence -> {combinator: $1.trim(), seq: $2}
-  ;
+comb_select_seq: combinator simple_selector_sequence -> {comb: $1.trim(), seq: $2};
 
-selector
-  : simple_selector_sequence comb_select_seq* -> m.doCombination($1, $2)
-  ;
+selector: simple_selector_sequence comb_select_seq* -> $2.reduce(c.doCombination, $1);
 
 combinator
   /* combinators can be surrounded by whitespace */
@@ -48,9 +42,7 @@ simple_selector_startseq
   | universal
   ;
 
-hash_sel
-  : HASH -> m.idSelector($1)
-  ;
+hash_sel: HASH -> c.idSelector($1);
 
 simple_selector_endseq
   : hash_sel
@@ -61,9 +53,8 @@ simple_selector_endseq
   ;
 
 simple_selector_sequence
-  : simple_selector_startseq simple_selector_endseq*
-      {$$ = m.combineSimpleSelectorSequence([$1].concat($2));}
-  | simple_selector_endseq+ -> m.combineSimpleSelectorSequence($1)
+  : simple_selector_startseq simple_selector_endseq* -> $2.reduce(m.createAnd, $1)
+  | simple_selector_endseq+ -> $1.reduce(m.createAnd)
   ;
 
 /* TODO: also allow multiple different options of tag type, maybe with a
@@ -71,21 +62,17 @@ simple_selector_sequence
    simple_selector_sequence, too, even without parens (but parens would make it
    easier) */
 element_name
-  : IDENT -> m.element($1)
+  : IDENT -> c.element($1)
   /* N.B.: allowing integers is NOT allowed in standard css3! this is done so
      that selection over javascript arrays is easier, allowing use of the "0",
      "1", etc. selectors instead of the 1-based indexing through :nth-child()
      and friends */
-  | INTEGER -> m.element($1)
+  | INTEGER -> c.element($1)
   ;
 
-universal
-  : '*' -> m.element($1)
-  ;
+universal: '*' -> c.element($1);
 
-class
-  : '.' IDENT -> m.classSelector($2)
-  ;
+class: '.' IDENT -> c.classSelector($2);
 
 attrib_match
   : PREFIXMATCH
@@ -98,25 +85,21 @@ attrib_match
 
 id_or_string
   : IDENT
-  | STRING -> $1.substr(0, $1.length - 2)
+  | STRING -> $1.substr(1, $1.length - 2)
   ;
 
-attrib_start
-  : '[' S* IDENT S* -> $3
-  ;
+attrib_start: '[' S* IDENT S* -> $3;
 
-attrib_end
-  : ']'
-  ;
+attrib_end: ']';
 
 attrib
-  : attrib_start attrib_end -> m.attributeExists($1)
+  : attrib_start attrib_end -> c.attributeExists($1)
   | attrib_start attrib_match CASEINSENSITIVEFLAG? S* id_or_string S* attrib_end
-    {$$ = m.attributeMatch($1, $2, $3, $5);}
+    { $$ = c.attributeMatch($1, $2, $3, $5); }
   ;
 
 id_or_pseudofun
-  : IDENT -> m.pseudoClass($1)
+  : IDENT -> c.pseudoClass($1)
   | functional_pseudo
   ;
 
@@ -126,43 +109,26 @@ pseudo
   /* Note that pseudo-elements are restricted to one per selector and */
   /* occur only in the last simple_selector_sequence. */
   : ':' id_or_pseudofun -> $2
-  | ':' ':' id_or_pseudofun -> m.pseudoElement($3)
+  | ':' ':' id_or_pseudofun -> c.pseudoElement($3)
   ;
 
-function_call
-  : FUNCTION -> m.parseFunctionalPseudoClass($1)
-  ;
+function_call: FUNCTION -> $1.substr(0, $1.length - 2);
 
-functional_pseudo
-  : function_call S* expression S* ')' -> m.functionalPseudoClass($1, $3)
-  ;
+functional_pseudo: function_call S* numerical_expression S* ')' -> c.functionalPseudoClass($1, $3);
 
 /* amending this from the given grammar to match the 'nth' grammar, given in
    the same document cited above. all functional pseudo-classes only accept
    "an+b"-type expressions */
 /* nth */
-expression
-  : a_n_plus_b -> m.parseA_N_Plus_BExpr($1)
-  | O D D -> m.parseOddExpr()
-  | E V E N -> m.parseEvenExpr()
+numerical_expression
+  : ANPLUSB -> c.parseA_N_Plus_BExpr($1)
+  | O D D -> c.parseOddExpr()
+  | E V E N -> c.parseEvenExpr()
   ;
 
 plus_minus: '-' | PLUS;
 
-a_n_plus_b
-  : plus_minus INTEGER N plus_minus INTEGER -> $1 + $2 + $3 + $4 + $5
-  /* this is stupid. 'n-b' is lexed as an identifier, even when b is a
-     number. we take care of non-integer b in parseA_N_Plus_BExpr() */
-  | plus_minus INTEGER IDENT -> $1 + $2 + $3
-  | INTEGER N plus_minus INTEGER -> $1 + $2 + $3 + $4
-  | N plus_minus INTEGER -> $1 + $2 + $3
-  | plus_minus INTEGER -> $1 + $2
-  | INTEGER -> $1
-  ;
-
-negation
-  : NOT S* negation_arg S* ')' -> m.negationPseudoClass($3)
-  ;
+negation: NOT S* negation_arg S* ')' -> m.createNot($3);
 
 negation_arg
   : element_name

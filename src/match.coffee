@@ -3,17 +3,13 @@
 recursively walk tree, adding matchers to list.
 
 start with some start list of matchers. matchers are given a SelecTree node, and
-return an object formatted like:
-{
-  found: <bool>
-  child: maybe<matcher>
-  next: list<MatcherAndData>
-}
+yield all objects "matching" them
 
 e.g.:
 matcher = (node) ->
-  found: true
-  next: null
+  if node.get().name == 'VarDecl'
+    yield node
+  else null
 
 TODO: use absolutePath!
 ###
