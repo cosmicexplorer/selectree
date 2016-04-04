@@ -22,11 +22,17 @@ selectors_group
       }
   ;
 
-comma_space_selector: COMMA S* selector -> $3;
+comma_space_selector
+  : COMMA S* selector -> $3
+  ;
 
-comb_select_seq: combinator simple_selector_sequence -> {comb: $1.trim(), seq: $2};
+comb_select_seq
+  : combinator simple_selector_sequence -> {comb: $1.trim(), seq: $2}
+  ;
 
-selector: simple_selector_sequence comb_select_seq* -> $2.reduce(c.doCombination, $1);
+selector
+  : simple_selector_sequence comb_select_seq* -> $2.reduce(c.doCombination, $1)
+  ;
 
 combinator
   /* combinators can be surrounded by whitespace */
@@ -42,7 +48,9 @@ simple_selector_startseq
   | universal
   ;
 
-hash_sel: HASH -> c.idSelector($1);
+hash_sel
+  : HASH -> c.idSelector($1)
+  ;
 
 simple_selector_endseq
   : hash_sel
@@ -70,9 +78,13 @@ element_name
   | INTEGER -> c.element($1)
   ;
 
-universal: '*' -> c.element($1);
+universal
+  : '*' -> c.element($1)
+  ;
 
-class: '.' IDENT -> c.classSelector($2);
+class
+  : '.' IDENT -> c.classSelector($2)
+  ;
 
 attrib_match
   : PREFIXMATCH
@@ -88,9 +100,13 @@ id_or_string
   | STRING -> $1.substr(1, $1.length - 2)
   ;
 
-attrib_start: '[' S* IDENT S* -> $3;
+attrib_start
+  : '[' S* IDENT S* -> $3
+  ;
 
-attrib_end: ']';
+attrib_end
+  : ']'
+  ;
 
 attrib
   : attrib_start attrib_end -> c.attributeExists($1)
@@ -112,9 +128,13 @@ pseudo
   | ':' ':' id_or_pseudofun -> c.pseudoElement($3)
   ;
 
-function_call: FUNCTION -> $1.substr(0, $1.length - 2);
+function_call
+  : FUNCTION -> $1.substr(0, $1.length - 2)
+  ;
 
-functional_pseudo: function_call S* numerical_expression S* ')' -> c.functionalPseudoClass($1, $3);
+functional_pseudo
+  : function_call S* numerical_expression S* ')' -> c.functionalPseudoClass($1, $3)
+  ;
 
 /* amending this from the given grammar to match the 'nth' grammar, given in
    the same document cited above. all functional pseudo-classes only accept
@@ -126,9 +146,14 @@ numerical_expression
   | E V E N -> c.parseEvenExpr()
   ;
 
-plus_minus: '-' | PLUS;
+plus_minus
+  : '-'
+  | PLUS
+  ;
 
-negation: NOT S* negation_arg S* ')' -> m.createNot($3);
+negation
+  : NOT S* negation_arg S* ')' -> m.createNot($3)
+  ;
 
 negation_arg
   : element_name

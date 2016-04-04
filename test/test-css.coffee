@@ -1,5 +1,5 @@
 {parse: parseCSS} = require '../src/grammars/css.tab'
-{match} = require '../src/tree-walker'
+{match} = require '../src/match'
 selectree = require '../src/selectree'
 
 # FIXME: allow selecting on the type of json object
@@ -11,7 +11,8 @@ module.exports =
     obj =
       k: [3]
     gen = match selectree(obj), parseCSS(':root > k 0')
-    test.deepEqual Array.from(gen).map((node) -> node.content()), [3]
+    res = Array.from(gen).map((node) -> node.content())
+    test.deepEqual res, [3]
     # obj =
     #   k:
     #     b:
@@ -23,3 +24,4 @@ module.exports =
     # gen = match selectree(obj), parseCSS('k b a > *')
     # test.deepEqual Array.from(gen).map((node) -> node.content()), [4, 2]
     test.done()
+    null

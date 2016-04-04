@@ -1,10 +1,12 @@
 `function* flatMap(gen, fn) {
+  "use strict";
   for (let el of gen) {
     yield*(fn(el));
   }
 }`
 
 `function* filter(gen, fn) {
+  "use strict";
   for (let el of gen) {
     if (fn(el)) {
       yield(el);

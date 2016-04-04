@@ -25,6 +25,7 @@ all: $(SRC_OUT) $(PARSERS)
 
 clean:
 	rm -f $(SRC_OUT) $(TEST_OUT)
+	rm -f $(PARSERS)
 
 distclean: clean
 	rm -rf $(NODE_DIR)

@@ -12,6 +12,7 @@ element = (str) -> switch str
 # turns functions of type (attr) -> to type (child) ->
 getAttributeMacro = (ident, f) -> (child) ->
   f child.attributes()[ident]?.toString()
+
 attributeExists = (ident) -> getAttributeMacro ident, (attr) -> attr?
 
 attributeEqualMap =

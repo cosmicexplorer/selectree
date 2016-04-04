@@ -6,13 +6,14 @@ outfile=$1
 grammar=$2
 lex=$3
 jison=$4
-echo "$jison" -t "$grammar" "$lex" -o "$outfile"
-res=$("$jison" -t "$grammar" "$lex" -o "$outfile")
+echo "$jison" "$grammar" "$lex" -o "$outfile"
+res=$("$jison" "$grammar" "$lex" -o "$outfile")
 code=$?
 if [ "$res" = "" ] && [ "$code" = "0" ]; then
   exit 0
 else
-  # rm "$outfile"
+  echo rm -f "$outfile"
+  rm -f "$outfile"
   echo "$res" 1>&2
-  # exit 1
+  exit 1
 fi
