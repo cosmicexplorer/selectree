@@ -1,7 +1,6 @@
 # drawn from http://www.w3.org/TR/css3-selectors/#selectors
 
 _ = require 'lodash'
-uuid = require 'node-uuid'
 util = require '../util'
 matchFuns = require '../match'
 
