@@ -3,19 +3,6 @@ _ = require 'lodash'
 # ParseXPath = require './xpath'
 {match} = require './match'
 
-# utility function
-StringOrFunOptions = (obj, opts, field) ->
-  strOrFun = opts[field]
-  return null unless strOrFun?
-  noCall = opts.dontFlattenFunctions
-  if _.isString strOrFun
-    if not noCall and _.isFunction(obj[strOrFun]) then obj[strOrFun]()
-    else obj[strOrFun]
-  else if _.isFunction strOrFun
-    res = strOrFun obj
-    if not noCall and _.isFunction res then res() else res
-  else throw new Error "option #{field} not string nor function!"
-
 class SelecTree
   # optional: 'xml', 'dontFlattenFunctions', 'id', 'attributes', 'content'
   # required for all: 'name'
@@ -28,6 +15,18 @@ class SelecTree
       else if _.isObject obj then JSONObjectTree
       else JSONValueTree
     new (Function.prototype.bind.call f, {}, arguments...)
+
+  stringOrFunOptions: (field) ->
+    strOrFun = @opts[field]
+    return null unless strOrFun
+    noCall = @opts.dontFlattenFunctions
+    if _.isString strOrFun
+      if not noCall and _.isFunction(@obj[strOrFun]) then @obj[strOrFun]()
+      else @obj[strOrFun]
+    else if _.isFunction strOrFun
+      res = strOrFun @
+      if not noCall and _.isFunction res then res() else res
+    else throw new Error "option #{field} not string nor function!"
 
   cloneOpts: -> Object.create @opts
 
@@ -44,31 +43,25 @@ class SelecTree
     @path = "#{prevPath}/#{@name()}"
 
   id: ->
-    @cachedID ?=
-      if @opts.id? then StringOrFunOptions @obj, @opts, 'id'
-      else @getID()
+    @cachedID ?= @stringOrFunOptions('id') ? @getID?() ? @path
     @cachedID
 
   children: ->
-    @cachedChildren ?=
-      if @opts.children?
-        childrenArr = StringOrFunOptions @obj, @opts, 'children'
-        childrenArr.map (o) => SelecTree.MakeTree o, @cloneOpts(), @, @path
-      else @getChildren()
+    if not @cachedChildren?
+      res = @stringOrFunOptions 'children'
+      @cachedChildren =
+        if res? then res.map (o) => SelecTree.MakeTree o, @cloneOpts(), @, @path
+        else @getChildren?() ? []
     @cachedChildren
 
   parent: -> @parentTree
 
   content: ->
-    @cachedContent ?=
-      if @opts.content? then StringOrFunOptions @obj, @opts, 'content'
-      else @getContent()
+    @cachedContent ?= @stringOrFunOptions('content') ? @getContent?()
     @cachedContent
 
   attributes: ->
-    @cachedAttributes ?=
-      if @opts.attributes? then StringOrFunOptions(@obj, @opts, 'attributes')
-      else @getAttributes()
+    @cachedAttributes ?= @stringOrFunOptions('attributes') ? @getAttributes?()
     @cachedAttributes
 
   css: (sel) -> match @, parseCSS(sel)
@@ -82,7 +75,7 @@ class XMLTree extends SelecTree
     throw new Error "no 'name' parameter given" unless opts.name?
     throw new Error "no children option given" unless opts.children?
   constructor: -> super(arguments...)
-  name: -> StringOrFunOptions @obj, @opts, 'name'
+  name: -> @stringOrFunOptions 'name'
 
 class JSONTree extends SelecTree
   validateOpts: (opts) ->
@@ -92,7 +85,7 @@ class JSONTree extends SelecTree
   constructor: -> super(arguments...)
   getID: -> @path
   name: ->
-    res = StringOrFunOptions(@obj, @opts, 'name')
+    res = @stringOrFunOptions 'name'
     if res? then res
     else if @isRoot then 'root'
     else throw new Error "json name not found"

@@ -34,7 +34,7 @@ module.exports =
     test.strictEqual xmlNameString.name(), "test", "xml can't find string name"
 
     xmlOptsFun = Object.create xmlOptsStr
-    xmlOptsFun.name = (obj) -> obj.nameField
+    xmlOptsFun.name = (obj) -> obj.get().nameField
     xmlNameFun = SelecTree.MakeTree {nameField: 'test'}, xmlOptsFun
     test.strictEqual xmlNameFun.name(), "test", "xml can't find function name"
 
@@ -113,7 +113,7 @@ module.exports =
     funOpts =
       xml: yes
       name: 'tag'
-      children: (obj) -> obj.children
+      children: (obj) -> obj.get().children
       attributes: 'attrs'
       content: 'content'
     # same with function options
@@ -156,7 +156,9 @@ module.exports =
     obj =
       a: 1
       b: 2
-    tree = SelecTree.MakeTree obj, {name: 'base'}
+    tree = SelecTree.MakeTree obj,
+      name: 'base'
+      attributes: (obj) -> obj.get()
     test.deepEqual tree.attributes(), obj, "invalid attributes"
     test.done()
 
