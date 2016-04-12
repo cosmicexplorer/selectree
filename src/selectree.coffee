@@ -42,6 +42,10 @@ class SelecTree
     @cachedAttributes = null
     @path = "#{prevPath}/#{@name()}"
 
+  name: ->
+    @cachedName ?= @stringOrFunOptions('name') ? @getName?()
+    @cachedName
+
   id: ->
     @cachedID ?= @stringOrFunOptions('id') ? @getID?() ? @path
     @cachedID
@@ -76,7 +80,6 @@ class XMLTree extends SelecTree
     throw new Error "no 'name' parameter given" unless opts.name?
     throw new Error "no children option given" unless opts.children?
   constructor: -> super(arguments...)
-  name: -> @stringOrFunOptions 'name'
 
 class JSONTree extends SelecTree
   validateOpts: (opts) ->
@@ -85,10 +88,8 @@ class JSONTree extends SelecTree
       throw new Error "no 'name' parameter for object"
   constructor: -> super(arguments...)
   getID: -> @path
-  name: ->
-    res = @stringOrFunOptions 'name'
-    if res? then res
-    else if @isRoot then 'root'
+  getName: ->
+    if @isRoot then 'root'
     else throw new Error "json name not found"
 
 class JSONArrayTree extends JSONTree
@@ -96,9 +97,9 @@ class JSONArrayTree extends JSONTree
   getChildren: -> @obj.map (o, ind) =>
     newOpts = @cloneOpts()
     newOpts.name = do (ind) -> -> ind.toString()
-    SelecTree.MakeTree o, newOpts, @obj, @path
+    SelecTree.MakeTree o, newOpts, @, @path
   getContent: -> @obj
-  getAttributes: -> {}
+  getAttributes: -> @obj
 
 class JSONObjectTree extends JSONTree
   constructor: -> super(arguments...)
@@ -106,7 +107,7 @@ class JSONObjectTree extends JSONTree
     for k, v of @obj
       newOpts = @cloneOpts()
       newOpts.name = do (k) -> -> k
-      SelecTree.MakeTree v, newOpts, @obj, @path
+      SelecTree.MakeTree v, newOpts, @, @path
   getContent: -> null
   getAttributes: -> @obj
 

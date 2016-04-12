@@ -17,21 +17,23 @@ attributeExists = (ident) -> getAttributeMacro ident, (attr) -> attr?
 
 attributeEqualMap =
   '=': (attr, idOrString, caseFold) ->
-    if caseFold then attr.toLowerCase() is idOrString.toLowerCase()
+    if (not attr?) or (not idOrString?) then no
+    else if caseFold then attr.toLowerCase() is idOrString.toLowerCase()
     else attr is idOrString
   '*=': (attr, idOrString, caseFold) ->
-    if caseFold
+    if (not attr?) or (not idOrString?) then no
+    else if caseFold
       attr.toLowerCase().indexOf(idOrString.toLowerCase()) isnt -1
     else attr.indexOf(idOrString) isnt -1
 attributeMatchMap =
   '~=': (attr, escapedValue, flags) ->
-    attr.match(new RegExp "(^|\\s)#{escapedValue}($|\\s)", flags)?
+    attr?.match(new RegExp "(^|\\s)#{escapedValue}($|\\s)", flags)?
   '^=': (attr, escapedValue, flags) ->
-    attr.match(new RegExp "^#{escapedValue}", flags)?
+    attr?.match(new RegExp "^#{escapedValue}", flags)?
   '$=': (attr, escapedValue, flags) ->
-    attr.match(new RegExp "#{escapedValue}$", flags)?
+    attr?.match(new RegExp "#{escapedValue}$", flags)?
   '|=': (attr, escapedValue, flags) ->
-    attr.match(new RegExp "^#{escapedValue}(\\-)?", flags)?
+    attr?.match(new RegExp "^#{escapedValue}(\\-)?", flags)?
 
 attributeMatch = (ident, attribMatch, caseInsensitive, idOrString) ->
   caseFold = caseInsensitive isnt ''
@@ -50,7 +52,7 @@ classSelector = (sel) -> (child) ->
   yield child if attributeMatchMap['~='](child.class(), _.escapeRegExp(sel))
 
 getIndexMacro = (f) -> (child) ->
-  [children, index] = util.getChildrenAndIndex child
+  [children, index] = util.getChildrenAndIndex(child)
   f children, index
 
 pseudoClassMap =
@@ -96,7 +98,7 @@ functionalPseudoClassMap =
     type = current.name()
     ind = 0
     for child, i in children.filter((c) -> c.name() is type)
-      if child is current
+      if child.id() is current.id()
         ind = i
         break
     recognizer(ind + 1)
@@ -106,7 +108,7 @@ functionalPseudoClassMap =
     filtered = children.filter (c) -> c.name() is type
     ind = filtered.length - 1
     for child, i in filtered
-      if child is current
+      if child.id() is current.id()
         ind = i
         break
     recognizer(filtered.length - ind)
@@ -143,7 +145,9 @@ parseEvenExpr = -> (num) -> num % 2 is 0
 functionalPseudoClass = (pclass, recognizer) ->
   fn = functionalPseudoClassMap[pclass] ?
     throw new Error "unrecognized functional pseudo class #{pclass}"
-  getIndexMacro (children, index) -> fn children, index, recognizer
+  (child) ->
+    if getIndexMacro((children, index) -> fn children, index, recognizer)(child)
+      yield child
 
 pseudoElement = (el) ->
   throw new Error "pseudo-elements (#{el}) are not supported"

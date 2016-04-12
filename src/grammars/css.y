@@ -91,8 +91,13 @@ id_or_string
   | STRING -> $1.substr(1, $1.length - 2)
   ;
 
+id_or_int_or_string
+  : id_or_string
+  | INTEGER -> $1.toString()
+  ;
+
 attrib_start
-  : '[' S* IDENT S* -> $3
+  : '[' S* id_or_int_or_string S* -> $3
   ;
 
 attrib_end
@@ -101,7 +106,7 @@ attrib_end
 
 attrib
   : attrib_start attrib_end -> c.attributeExists($1)
-  | attrib_start attrib_match CASEINSENSITIVEFLAG? S* id_or_string S* attrib_end
+  | attrib_start attrib_match CASEINSENSITIVEFLAG? S* id_or_int_or_string S* attrib_end
     { $$ = c.attributeMatch($1, $2, $3, $5); }
   ;
 
@@ -116,7 +121,7 @@ pseudo
   ;
 
 function_call
-  : FUNCTION -> $1.substr(0, $1.length - 2)
+  : FUNCTION -> $1.substr(0, $1.length - 1)
   ;
 
 functional_pseudo
@@ -124,7 +129,8 @@ functional_pseudo
   ;
 
 numerical_expression
-  : ANPLUSB -> c.parseA_N_Plus_BExpr($1)
+  : INTEGER -> c.parseA_N_Plus_BExpr($1)
+  | ANPLUSB -> c.parseA_N_Plus_BExpr($1)
   | O D D -> c.parseOddExpr()
   | E V E N -> c.parseEvenExpr()
   ;

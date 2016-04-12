@@ -30,7 +30,7 @@ else (node) ->
   # NOTE: traverses entire tree twice, synchronously!!!
   leftResults = Array.from (match1 node)
   rightResults = Array.from (match2 node)
-  yield from _.intersectionBy [leftResults, rightResults], (el) -> el.id()
+  yield from _.intersectionBy leftResults, rightResults, (el) -> el.id()
 
 infinite = (matcher) -> if not matcher then null else (node) ->
   yield from matcher node

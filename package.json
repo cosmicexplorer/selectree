@@ -13,6 +13,6 @@
     "nodeunit": "^0.9.1"
   },
   "dependencies": {
-    "lodash": "^3.10.1"
+    "lodash": "^4.10.0"
   }
 }

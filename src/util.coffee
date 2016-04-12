@@ -16,9 +16,9 @@
 
 getChildrenAndIndex = (node) ->
   p = node.parent()
-  if p
+  if p?
     children = p.children()
     [children, (children.findIndex (el) -> el.id() is node.id())]
-  else null
+  else [[node], 0]
 
 module.exports = {flatMap, filter, getChildrenAndIndex}
