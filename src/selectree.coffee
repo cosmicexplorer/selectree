@@ -33,8 +33,6 @@ class SelecTree
 
   validateOpts: (opts) ->
     throw new Error "no traversal options given" unless opts?
-    if (not opts.name?) and (not @isRoot)
-      throw new Error "no 'name' parameter given for object"
 
   constructor: (@obj, @opts, @parentTree = null, prevPath = '') ->
     @isRoot = not @parentTree?
@@ -81,11 +79,16 @@ class SelecTree
 class XMLTree extends SelecTree
   validateOpts: (opts) ->
     super(opts)
+    throw new Error "no 'name' parameter given" unless opts.name?
     throw new Error "no children option given" unless opts.children?
   constructor: -> super(arguments...)
   name: -> StringOrFunOptions @obj, @opts, 'name'
 
 class JSONTree extends SelecTree
+  validateOpts: (opts) ->
+    super(opts)
+    if (not opts.name?) and (not @isRoot)
+      throw new Error "no 'name' parameter for object"
   constructor: -> super(arguments...)
   getID: -> @path
   name: ->
@@ -122,5 +125,10 @@ class JSONValueTree extends JSONTree
 selectree = (obj, opts = {}) -> SelecTree.MakeTree obj, opts
 
 selectree.SelecTree = SelecTree
+selectree.XMLTree = XMLTree
+selectree.JSONTree = JSONTree
+selectree.JSONArrayTree = JSONArrayTree
+selectree.JSONObjectTree = JSONObjectTree
+selectree.JSONValueTree = JSONValueTree
 
 module.exports = selectree
