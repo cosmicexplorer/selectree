@@ -13,15 +13,18 @@ module.exports =
     gen = match selectree(obj), matcher
     res = Array.from(gen).map((node) -> node.content())
     test.deepEqual res, [3]
-    # obj =
-    #   k:
-    #     b:
-    #       a: [53, 4]
-    #     c: '3'     # TODO: figure out why this line causes infinite recursion?
-    #   l: 57
-    #   a: 2
-    # # TODO: figure out why this selector doesn't work!
-    # gen = match selectree(obj), parseCSS('k b a > *')
-    # test.deepEqual Array.from(gen).map((node) -> node.content()), [4, 2]
+    test.done()
+    null
+  'nested': (test) ->
+    obj =
+      k:
+        b:
+          a: [53, 4]
+        c: '3'
+      l: 57
+      a: 2
+    gen = match selectree(obj), parseCSS('a > *')
+    res = Array.from(gen).map((node) -> node.content())
+    test.deepEqual res, [53, 4]
     test.done()
     null

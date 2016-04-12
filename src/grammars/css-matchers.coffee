@@ -4,10 +4,10 @@ _ = require 'lodash'
 util = require '../util'
 matchFuns = require '../match'
 
+universal = -> (child) -> yield child
+
 # tag names
-element = (str) -> switch str
-  when '*' then (child) -> yield child
-  else (child) -> if child.name() is str then yield child else null
+element = (str) -> (child) -> if child.name() is str then yield child else null
 
 # turns functions of type (attr) -> to type (child) ->
 getAttributeMacro = (ident, f) -> (child) ->
@@ -158,6 +158,7 @@ combinatorMap =
 doCombination = (matcher, next) -> combinatorMap[next.comb] matcher, next.seq
 
 module.exports = {
+  universal
   element
   attributeExists
   attributeMatch

@@ -34,7 +34,7 @@ else (node) ->
 
 infinite = (matcher) -> if not matcher then null else (node) ->
   yield from matcher node
-  yield from ((infinite matcher) n) for n in node.children()
+  yield from infinite(matcher)(n) for n in node.children()
   null
 
 # matcher which accepts everything. progressive
@@ -51,7 +51,7 @@ createNot = (matcher) -> if not matcher then acceptAll else (node) ->
 childMatcher = (match1, match2) -> if (not match1) or (not match2) then null
 else (node) ->
   yield from util.flatMap (match1 node), (matched) ->
-    yield from (match2 n) for n in matched.children()
+    yield from match2(n) for n in matched.children()
     null
 
 # space combinator

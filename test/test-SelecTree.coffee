@@ -38,8 +38,7 @@ module.exports =
 
     xmlNotStringNorFunOpts = Object.create xmlOptsStr
     xmlNotStringNorFunOpts.name = {}
-    xmlNotStringNorFunObj = new SelecTree {}, xmlNotStringNorFunOpts
-    test.throws (-> xmlNotStringNorFunObj.name()),
+    test.throws (-> new SelecTree {}, xmlNotStringNorFunOpts),
       "non-string/function name not throwing"
     test.done()
 

@@ -31,15 +31,15 @@ class SelecTree
       throw new Error "no children option given!"
 
   @EachCaseOfOpts: (obj, opts, arrFun, objFun, valueFun, xmlFun) ->
-    if opts.xml or opts.children? then xmlFun? obj, opts
-    else
-      if _.isArray obj then arrFun obj, opts
-      else if _.isObject obj then objFun? obj, opts
-      else valueFun? obj, opts
+    ret = if opts.xml then xmlFun? obj, opts
+    else if _.isArray obj.obj then arrFun? obj, opts
+    else if _.isObject obj.obj then objFun? obj, opts
+    else valueFun? obj, opts
+    ret ? []
 
   cloneOpts: -> Object.create @origOpts
 
-  constructor: (@obj, @opts, @parentSel = null) ->
+  constructor: (@obj, @opts, @parentSel = null, prevPath = '') ->
     @constructor.ValidateArgs @opts
     @cachedChildren = null
     # clone opts from original prototype only (root's prototype). don't keep
@@ -47,9 +47,11 @@ class SelecTree
     if @parentSel?
       @isRoot = no
       @origOpts = @parentSel.opts
+      @path = "#{prevPath}/#{@name()}"
     else
       @isRoot = yes
       @origOpts = @opts
+      @path = "#{@name()}"
 
   name: ->
     if @opts.xml then StringOrFunOptions @obj, @opts, 'name'
@@ -61,8 +63,10 @@ class SelecTree
 
   id: ->
     if @opts.id? then StringOrFunOptions @obj, @opts, 'id'
-    else @attributes().id
+    else if @opts.xml then @attributes().id
+    else @path
 
+  # FIXME: deal with variation in .children() by subclassing
   # could use generators here, but things like :nth-last-child() require full
   # enumeration anyway, and most children can fit in memory anyway. streaming
   # trees is a different problem.
@@ -71,13 +75,13 @@ class SelecTree
     obj.map (o, ind) =>
       newOpts = thisObj.cloneOpts()
       newOpts.name = ind.toString()
-      new SelecTree o, newOpts, thisObj
+      new SelecTree o, newOpts, thisObj, thisObj.path
   @GetObjectChildren: (thisObj, opts) =>
     obj = thisObj.obj
     for k, v of obj
       newOpts = thisObj.cloneOpts()
       newOpts.name = k
-      new SelecTree v, newOpts, thisObj
+      new SelecTree v, newOpts, thisObj, thisObj.path
   @GetEmptyChild: -> []
   children: ->
     # @cachedChildren is maybe a perf boost, but mostly so that we can rely on
@@ -88,9 +92,10 @@ class SelecTree
         if @opts.children?
           childrenArr = StringOrFunOptions @obj, @opts, 'children'
           if childrenArr instanceof Array
-            childrenArr.map (o) => new SelecTree o, @cloneOpts(), @
+            childrenArr.map (o) => new SelecTree o, @cloneOpts(), @, @path
           else throw new Error "children not an array!"
         else
+          debugger
           @constructor.EachCaseOfOpts @, @opts,
             @constructor.GetArrayChildren,
             @constructor.GetObjectChildren,
@@ -99,9 +104,9 @@ class SelecTree
 
   parent: -> @parentSel
 
-  @GetDefaultContent: (obj, opts) -> StringOrFunOptions(obj, opts, 'content')
+  @GetDefaultContent: (obj, opts) -> StringOrFunOptions(obj.obj, opts, 'content')
   content: ->
-    @constructor.EachCaseOfOpts @obj, @opts,
+    @constructor.EachCaseOfOpts @, @opts,
       @constructor.GetDefaultContent,
       @constructor.GetDefaultContent,
       (=> @obj),
