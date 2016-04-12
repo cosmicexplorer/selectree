@@ -62,12 +62,14 @@ pseudoClassMap =
     ind = 0
     while ind < index
       return false if children[ind].name() is type
+      ++ind
     return true
   'last-of-type': getIndexMacro (children, index) ->
     type = children[index].name()
     ind = children.length - 1
     while ind > index
       return false if children[ind].name() is type
+      ++ind
     return true
   'only-child': getIndexMacro (children, index) -> children.length is 1
   'only-of-type': getIndexMacro (children, index) ->
