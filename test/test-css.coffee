@@ -16,6 +16,7 @@ module.exports =
     test.done()
     null
   'nested': (test) ->
+    test.expect 1
     obj =
       k:
         b:
@@ -28,3 +29,10 @@ module.exports =
     test.deepEqual res, [53, 4]
     test.done()
     null
+  'paths': (test) ->
+    test.expect 1
+    obj = a: [5]
+    gen = match selectree(obj), parseCSS('a > 0')
+    res = Array.from(gen)
+    test.deepEqual res.map((node) -> node.path), ['/root/a/0']
+    test.done()
