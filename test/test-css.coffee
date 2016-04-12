@@ -68,3 +68,13 @@ module.exports =
     res = Array.from(gen).map((node) -> node.content())
     test.deepEqual res, [2]
     test.done()
+  'comma': (test) ->
+    test.expect 1
+    obj =
+      a: 1
+      b: 3
+      c: [5]
+    gen = match selectree(obj), parseCSS('a, c > 0')
+    res = Array.from(gen).map((node) -> node.content())
+    test.deepEqual res, [1, 5]
+    test.done()
