@@ -3,8 +3,8 @@
 %ebnf
 %start selectors_group
 
-%{
 /* https://github.com/zaach/jison/issues/313 */
+%{
 var Jison = require('jison');
 var m = require('../match');
 var c = require('./css-matchers');
@@ -13,13 +13,11 @@ var c = require('./css-matchers');
 %%
 
 selectors_group
-  : selector comma_space_selector* { return $2.reduce(m.createOr, $1); }
+  : selector comma_space_selector* EOF { return $2.reduce(m.createOr, $1); }
   | error
-      {
-        // consider more in-depth error handling
-        var msg = "invalid selector: '" + $1 + "'";
-        throw new Error(msg);
-      }
+    {
+        throw new Error("invalid selector:<" + $1 + ">");
+    }
   ;
 
 comma_space_selector
@@ -65,10 +63,7 @@ simple_selector_sequence
   ;
 
 /* TODO: allow OR with parens, AND with custom operator */
-/* N.B.: allowing integers is NOT allowed in standard css3! this is done so
-   that selection over javascript arrays is easier, allowing use of the "0",
-   "1", etc. selectors instead of the 1-based indexing through :nth-child()
-   and friends */
+/* NOTE: integer tags not allowed in normal css3! this is a custom extension */
 element_name
   : IDENT -> c.element($1)
   | INTEGER -> c.element($1)
@@ -116,10 +111,6 @@ id_or_pseudofun
   ;
 
 pseudo
-  /* '::' starts a pseudo-element, ':' a pseudo-class */
-  /* Exceptions: :first-line, :first-letter, :before and :after. */
-  /* Note that pseudo-elements are restricted to one per selector and */
-  /* occur only in the last simple_selector_sequence. */
   : ':' id_or_pseudofun -> $2
   | ':' ':' id_or_pseudofun -> c.pseudoElement($3)
   ;
@@ -132,9 +123,6 @@ functional_pseudo
   : function_call S* numerical_expression S* ')' -> c.functionalPseudoClass($1, $3)
   ;
 
-/* amending this from the given grammar to match the 'nth' grammar, given in
- * the same document cited above. all functional pseudo-classes only accept
- * "an+b"-type expressions */
 numerical_expression
   : ANPLUSB -> c.parseA_N_Plus_BExpr($1)
   | O D D -> c.parseOddExpr()

@@ -113,7 +113,7 @@ class SelecTree
     else @obj
 
   css: (sel) -> match @, parseCSS(sel)
-  # xpath: (sel) -> new SelectStream @, sel, ParseXPath
+  # xpath: (sel) -> match @, parseXPath(sel)
 
   get: -> @obj
 

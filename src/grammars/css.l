@@ -28,6 +28,7 @@ V         "v"|\\0{0,4}("58"|"78")(\r\n|[ \t\r\n\f])?|"\\v"
 %%
 
 [ \t\r\n\f]+     return 'S'
+<<EOF>>          return 'EOF'
 ([-+]?[0-9]*[nN])?([-+][0-9]+)?	return 'ANPLUSB'
 "~="             return 'INCLUDES'
 "|="             return 'DASHMATCH'

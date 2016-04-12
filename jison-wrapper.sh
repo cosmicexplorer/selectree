@@ -12,8 +12,8 @@ code=$?
 if [ "$res" = "" ] && [ "$code" = "0" ]; then
   exit 0
 else
+  echo "$res" 1>&2
   echo rm -f "$outfile"
   rm -f "$outfile"
-  echo "$res" 1>&2
   exit 1
 fi

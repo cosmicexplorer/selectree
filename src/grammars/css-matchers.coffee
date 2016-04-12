@@ -11,7 +11,7 @@ element = (str) -> switch str
 
 # turns functions of type (attr) -> to type (child) ->
 getAttributeMacro = (ident, f) -> (child) ->
-  f child.attributes()[ident]?.toString()
+  yield child if f(child.attributes()[ident]?.toString())
 
 attributeExists = (ident) -> getAttributeMacro ident, (attr) -> attr?
 
@@ -46,8 +46,8 @@ attributeMatch = (ident, attribMatch, caseInsensitive, idOrString) ->
     else throw new Error "unrecognized attribute matcher #{attribMatch}"
 
 idSelector = (id) -> (child) -> child.id() is id
-classSelector = (classSel) -> (child) ->
-  attributeMatchMap['~='] child.class(), _.escapeRegExp classSel
+classSelector = (sel) -> (child) ->
+  yield child if attributeMatchMap['~='](child.class(), _.escapeRegExp(sel))
 
 getIndexMacro = (f) -> (child) ->
   [children, index] = util.getChildrenAndIndex child
@@ -78,8 +78,10 @@ pseudoClassMap =
   'empty': (child) -> child.children().length is 0
 
 pseudoClass = (pclass) ->
-  pseudoClassMap[pclass] ?
-    throw new Error "unrecognized pseudo class #{pclass}"
+  res = pseudoClassMap[pclass]
+  if not res? then throw new Error "unrecognized pseudo class #{pclass}"
+  # turn boolean into generator
+  else (child) -> yield child if res(child)
 
 functionalPseudoClassMap =
   # +1 is because indexing is 1-based
