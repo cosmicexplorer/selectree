@@ -2,6 +2,7 @@ _ = require 'lodash'
 {parse: parseCSS} = require './grammars/css.tab'
 # ParseXPath = require './xpath'
 {match} = require './match'
+util = require './util'
 
 class SelecTree
   # optional: 'xml', 'dontFlattenFunctions', 'id', 'attributes', 'content'
@@ -69,7 +70,10 @@ class SelecTree
       @stringOrFunOptions('attributes') ? @getAttributes?() ? {}
     @cachedAttributes
 
-  css: (sel) -> match @, parseCSS(sel)
+  toNodes: (parseFun, sel) ->
+    util.map match(@, parseFun(sel)), (node) -> node.get()
+
+  css: (sel) -> @toNodes parseCSS, sel
   # xpath: (sel) -> match @, parseXPath(sel)
 
   get: -> @obj

@@ -1,3 +1,10 @@
+`function* map(gen, fn) {
+  "use strict";
+  for (let el of gen) {
+    yield(fn(el));
+  }
+}`
+
 `function* flatMap(gen, fn) {
   "use strict";
   for (let el of gen) {
@@ -21,4 +28,4 @@ getChildrenAndIndex = (node) ->
     [children, (children.findIndex (el) -> el.id() is node.id())]
   else [[node], 0]
 
-module.exports = {flatMap, filter, getChildrenAndIndex}
+module.exports = {map, flatMap, filter, getChildrenAndIndex}

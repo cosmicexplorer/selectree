@@ -78,3 +78,7 @@ module.exports =
     res = Array.from(gen).map((node) -> node.content())
     test.deepEqual res, [1, 5]
     test.done()
+  'toNodes': (test) ->
+    test.expect 1
+    test.deepEqual Array.from(selectree({a: [3, 4]}).css('a > *')), [3, 4]
+    test.done()
