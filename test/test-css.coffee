@@ -23,7 +23,7 @@ module.exports =
         c: '3'
       l: 57
       a: 2
-    gen = match selectree(obj), parseCSS('a > *')
+    gen = match selectree(obj), parseCSS('k b a > *')
     res = Array.from(gen).map((node) -> node.content())
     test.deepEqual res, [53, 4]
     test.done()

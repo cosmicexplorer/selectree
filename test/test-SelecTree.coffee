@@ -173,7 +173,7 @@ module.exports =
 
     emptyAttributes = {}
     emptyAttrsTree = SelecTree.MakeTree emptyAttributes, opts
-    test.ok (not emptyAttrsTree.attributes()?), "invalid empty attributes"
+    test.deepEqual emptyAttrsTree.attributes(), {}, "invalid empty attributes"
 
     testKVPairs = {a: 1, b: 2}
     normalAttrs = attrs: testKVPairs
