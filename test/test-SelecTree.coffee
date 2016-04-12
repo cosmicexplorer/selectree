@@ -4,23 +4,25 @@ selectree = require '../src/selectree'
 module.exports =
   'construction': (test) ->
     test.expect 5
-    test.throws (-> new SelecTree {}), "no options"
-    test.throws (-> new SelecTree {}, {xml: yes}), "not enough options"
-    test.doesNotThrow (-> new SelecTree {xml: yes},
+    test.throws (-> SelecTree.MakeTree {}), "no options"
+    test.throws (-> SelecTree.MakeTree {}, {xml: yes}), "not enough options"
+    test.doesNotThrow (-> SelecTree.MakeTree {},
       name: "testName"
       children: "testChildren"
       attributes: "testAttributes"
       content: "testContent"), "enough options given"
-    test.throws (-> new SelecTree {}), "no name option"
-    test.doesNotThrow (-> new SelecTree {}, {name: "test"}),
+    test.throws (-> SelecTree.MakeTree {}), "no name option"
+    test.doesNotThrow (-> SelecTree.MakeTree {}, {name: "test"}),
       "name given"
     test.done()
 
   'name': (test) ->
-    test.expect 4
-    # json only allows direct string name
-    jsonName = new SelecTree {}, {name: "test"}
+    test.expect 5
+    jsonName = SelecTree.MakeTree {}, {name: -> "test"}
     test.strictEqual jsonName.name(), "test", "json can't find correct name"
+
+    jsonNameRoot = SelecTree.MakeTree {}, {}
+    test.strictEqual jsonNameRoot.name(), "root", "json didn't name root"
 
     xmlOptsStr =
       xml: yes
@@ -28,38 +30,37 @@ module.exports =
       children: 'childField'
       attributes: 'attrField'
       content: 'contentField'
-    xmlNameString = new SelecTree {nameField: 'test'}, xmlOptsStr
+    xmlNameString = SelecTree.MakeTree {nameField: 'test'}, xmlOptsStr
     test.strictEqual xmlNameString.name(), "test", "xml can't find string name"
 
     xmlOptsFun = Object.create xmlOptsStr
     xmlOptsFun.name = (obj) -> obj.nameField
-    xmlNameFun = new SelecTree {nameField: 'test'}, xmlOptsFun
+    xmlNameFun = SelecTree.MakeTree {nameField: 'test'}, xmlOptsFun
     test.strictEqual xmlNameFun.name(), "test", "xml can't find function name"
 
     xmlNotStringNorFunOpts = Object.create xmlOptsStr
     xmlNotStringNorFunOpts.name = {}
-    test.throws (-> new SelecTree {}, xmlNotStringNorFunOpts),
+    test.throws (-> SelecTree.MakeTree {}, xmlNotStringNorFunOpts),
       "non-string/function name not throwing"
     test.done()
 
   'children (json)': (test) ->
     test.expect 9
-    opts =
-      name: "base"
+    opts = {}
 
     jsonBaseType = null
-    jsonBaseTree = new SelecTree jsonBaseType, opts
+    jsonBaseTree = SelecTree.MakeTree jsonBaseType, opts
     test.deepEqual jsonBaseTree.children(), [], "null object not empty children"
 
     jsonArrayType = ['hey']
-    jsonArrayTree = new SelecTree jsonArrayType, opts
+    jsonArrayTree = SelecTree.MakeTree jsonArrayType, opts
     arrayRes = jsonArrayTree.children()
     test.equal arrayRes.length, 1, "array object has invalid number of children"
     test.equal arrayRes[0].name(), '0', "array child has invalid name"
     test.equal arrayRes[0].obj, 'hey', "array child has invalid value"
 
     jsonObjectType = {hey: 'ya', hello: 'hey'}
-    jsonObjectTree = new SelecTree jsonObjectType, opts
+    jsonObjectTree = SelecTree.MakeTree jsonObjectType, opts
     objectRes = jsonObjectTree.children()
     test.equal objectRes.length, 2, "object has invalid number of children"
     test.equal objectRes[0].name(), 'hey', "object child has invalid name"
@@ -84,7 +85,7 @@ module.exports =
       children: 'children'
       attributes: 'attrs'
       content: 'content'
-    stringObj = new SelecTree traversalObj, stringOpts
+    stringObj = SelecTree.MakeTree traversalObj, stringOpts
     firstChildren = stringObj.children()
     test.equal firstChildren.length, 2, "invalid number of children"
     test.equal firstChildren[0].name(), 'leaf', "invalid child name"
@@ -116,7 +117,7 @@ module.exports =
       attributes: 'attrs'
       content: 'content'
     # same with function options
-    funObj = new SelecTree traversalObj, funOpts
+    funObj = SelecTree.MakeTree traversalObj, funOpts
     firstChildrenFun = funObj.children()
     test.equal firstChildrenFun.length, 2, "invalid number of children"
     test.equal firstChildrenFun[0].name(), 'leaf', "invalid child name"
@@ -141,12 +142,12 @@ module.exports =
       children: 'test'
       attributes: 'test'
       content: 'content'
-    flattenObj = new SelecTree obj, flattenOpts
+    flattenObj = SelecTree.MakeTree obj, flattenOpts
     test.equal flattenObj.content(), 'test', "invalid flattened result"
 
     nonFlatOpts = Object.create flattenOpts
     nonFlatOpts.dontFlattenFunctions = yes
-    nonFlatObj = new SelecTree obj, nonFlatOpts
+    nonFlatObj = SelecTree.MakeTree obj, nonFlatOpts
     test.equal nonFlatObj.content(), f, "invalid non-flattened result"
     test.done()
 
@@ -155,7 +156,7 @@ module.exports =
     obj =
       a: 1
       b: 2
-    tree = new SelecTree obj, {name: 'base'}
+    tree = SelecTree.MakeTree obj, {name: 'base'}
     test.deepEqual tree.attributes(), obj, "invalid attributes"
     test.done()
 
@@ -169,12 +170,12 @@ module.exports =
       content: test
 
     emptyAttributes = {}
-    emptyAttrsTree = new SelecTree emptyAttributes, opts
-    test.deepEqual emptyAttrsTree.attributes(), {}, "invalid empty attributes"
+    emptyAttrsTree = SelecTree.MakeTree emptyAttributes, opts
+    test.ok (not emptyAttrsTree.attributes()?), "invalid empty attributes"
 
     testKVPairs = {a: 1, b: 2}
     normalAttrs = attrs: testKVPairs
-    normalAttrsTree = new SelecTree normalAttrs, opts
+    normalAttrsTree = SelecTree.MakeTree normalAttrs, opts
     test.deepEqual normalAttrsTree.attributes(), testKVPairs,
       "invalid normal attributes"
     test.done()
