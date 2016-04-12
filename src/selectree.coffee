@@ -61,7 +61,8 @@ class SelecTree
     @cachedContent
 
   attributes: ->
-    @cachedAttributes ?= @stringOrFunOptions('attributes') ? @getAttributes?()
+    @cachedAttributes ?=
+      @stringOrFunOptions('attributes') ? @getAttributes?() ? {}
     @cachedAttributes
 
   css: (sel) -> match @, parseCSS(sel)
