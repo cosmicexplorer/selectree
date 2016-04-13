@@ -52,7 +52,7 @@ classSelector = (sel) -> (child) ->
   yield child if attributeMatchMap['~='](child.class(), _.escapeRegExp(sel))
 
 getIndexMacro = (f) -> (child) ->
-  [children, index] = util.getChildrenAndIndex(child)
+  {children, index} = util.getChildrenAndIndex(child)
   f children, index
 
 pseudoClassMap =
