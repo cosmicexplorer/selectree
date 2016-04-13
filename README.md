@@ -1,7 +1,7 @@
 selectree
 =========
 
-A wrapper that takes your tree-like data structure and makes CSS/XPath selectors available for traversal.
+A wrapper that takes your tree-like data structure and makes CSS selectors available for traversal.
 
 Usage:
 ``` javascript
@@ -20,36 +20,9 @@ If `xml` in options is truthy:
 - If `children` is given, then selectree will check that attribute to get child nodes of the current node.
 
 # TODO
-
-- Make some function that allows piping the output of a selection into a new object stream (by making `.css()`/`.xpath()` a Readable stream). Something like:
-
-``` javascript
-selectree(treeLikeObj)
-  .css('field1 > field2')
-  .pipe(otherStreamWhichLikesObjects);
-```
-
-- We should make the above and below work so that:
-  - the selector functions `.css()`/`.xpath()` return a *newly-created* `Readable` stream
-  - select funs accept an optional second argument; a function which receives the node the selector selects on, and returns a modified version of that node. in the output stream, the selected nodes will be replaced with the output
-  - the output `Transform` stream will have a `toTree()` function accepting a callback which runs on completion of the stream
-
-- Allow modification of the tree and piping into another object (the first tree-like object, but with whatever modifications you may have made). Something like:
-
-``` javascript
-selectree(treeLikeObj)
-  .css('field1 > field2', function(node) {
-    node.tagName = "field3";
-    return node;
-  }).toTree(function(tree) {
-    console.log(tree);
-  });
-```
-
-- Make sure to do all readableStream event creation by pushing onto the event queue instead of doing synchronously, otherwise you get a synchronous stream, which is just silly.
-- Along the same lines, consider some sort of modification that allows stream-based input instead of requiring a physical object.
-
-- add graphql?!
+- xpath or graphql?
+    - we'll see, those take a while to implement and are harder to generalize
+    - xpath sounds cool though we'll see
 
 # LICENSE
 

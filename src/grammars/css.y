@@ -14,10 +14,7 @@ var c = require('./css-matchers');
 
 selectors_group
   : selector comma_space_selector* EOF { return m.infinite($2.reduce(m.createOr, $1)); }
-  | error
-    {
-        throw new Error("invalid selector:<" + $1 + ">");
-    }
+  | error { throw new Error("invalid selector:<" + $1 + ">"); }
   ;
 
 comma_space_selector
