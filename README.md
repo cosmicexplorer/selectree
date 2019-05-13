@@ -23,6 +23,14 @@ If `xml` in options is truthy:
 - xpath or graphql?
     - we'll see, those take a while to implement and are harder to generalize
     - xpath sounds cool though we'll see
+        - *update:* the xpath implementation is maybe 25% complete
+
+# Links
+- [how any json key/value pair can be viewed as an index into an entity](https://cloud.google.com/blog/products/application-development/api-design-why-you-should-use-links-not-keys-to-represent-relationships-in-apis)
+    - *this results in an equivalence between attributes (key/value pairs) and sub-objects (key/object pairs)!!!*
+        1. **this means we have a way to specify attribute accesses in the same syntax as we do traversal of sub-objects**
+        2. *TODO: we can use this to formally prove the json <=> xml equivalence*
+            - probably not too hard to do!!!
 
 # LICENSE
 
